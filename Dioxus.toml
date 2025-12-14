@@ -1,5 +1,9 @@
 [application]
 
+[bundle]
+identifier = "com.jonsetzky"
+publisher = "jonsetzky"
+
 [web.app]
 
 # HTML title tag content

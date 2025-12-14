@@ -7,4 +7,5 @@ edition = "2024"
 dioxus = { version = "0.7.0" }
 
 [features]
+default = ["desktop"]
 desktop = ["dioxus/desktop"] # This feature is enabled during desktop builds
