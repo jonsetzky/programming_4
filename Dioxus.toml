@@ -1,13 +1,14 @@
 [application]
 
 [bundle]
-identifier = "com.jonsetzky"
+identifier = "jonsetzky"
 publisher = "jonsetzky"
+icon_path = "icons/icon.ico"
 
 [web.app]
 
 # HTML title tag content
-title = "programming_4"
+title = "Neighbor Chat"
 
 # include `assets` in web platform
 [web.resource]
