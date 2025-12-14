@@ -15,9 +15,17 @@ which uses WebView2 for rendering.
   - Installation guide [here](https://dioxuslabs.com/learn/0.7/getting_started/)
     for possible problems
 
+If you do not have the [chat server](https://github.com/anttijuu/O4-server) running
+on port `10000` download it by fetching the submodule with:
+
+```bash
+git submodule update
+```
+
 ## Running the application
 
-Start the [chat server](https://github.com/anttijuu/O4-server) by running:
+If you do not have the [chat server](https://github.com/anttijuu/O4-server) running
+on port `10000`, start it by running:
 
 ```bash
 cd server
