@@ -1,3 +1,10 @@
+use dioxus::prelude::*;
+
+#[component]
+fn App() -> Element {
+    rsx! { "Hello, world!" }
+}
+
 fn main() {
-    println!("Hello, world!");
+    dioxus::launch(App);
 }
