@@ -6,6 +6,9 @@ use std::time::SystemTime;
 use dioxus::{prelude::*, stores::use_store_sync};
 use dioxus_desktop::{Config, LogicalSize, WindowBuilder};
 
+mod components;
+use components::*;
+
 mod o4_chat_client;
 use o4_chat_client::O4ChatClient;
 
@@ -40,8 +43,9 @@ fn App() -> Element {
     let app = use_store_sync(|| AppState {
         client: O4ChatClient::new(None).expect("Couldn't create chat client"),
     });
-    let mut hello_world_count = use_signal(|| 0);
     let mut is_connected = use_signal(|| false);
+
+    let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
     let connect = move || {
         spawn(async move {
@@ -90,10 +94,14 @@ fn App() -> Element {
                 "Connect"
             }
         }
-        button { onclick: move |_| hello_world_count += 1, "Ask for more Hello, World!" }
-        for _ in 0..*hello_world_count.read() {
-            p { "Hello, World!" }
+        p {}
+        MessageBox {
+            onsend: move |message: String| {
+                println!("Sending message: {}", message);
+                messages.write().push(message);
+            },
         }
+        MessageHistory { messages }
     }
 }
 

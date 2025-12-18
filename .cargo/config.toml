@@ -2,7 +2,10 @@
 # note that this requires using nightly rustc
 # which can be enabled for current directory with `rustc override set nightly`
 # might require 
-rustflags = ["-C", "link-arg=-fuse-ld=lld", "-Z", "threads=8"]
+rustflags = [
+    "-C", "link-arg=-fuse-ld=lld", 
+    "-Z", "threads=8",
+    "-A", "non_snake_case"]
 
 # can be further optimized with:
 #rustc-wrapper = "/path/to/sccache"
