@@ -6,8 +6,10 @@ use smol::io::{AsyncBufReadExt, BufReader};
 use smol::net::TcpStream;
 use std::collections::VecDeque;
 use std::io::Error;
+use std::rc::Rc;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use tokio::task::{JoinHandle, JoinSet};
 use uuid::Uuid;
 
 use crate::arc_mutex_signal::AMSignal;
@@ -25,6 +27,7 @@ enum MessageType {
 #[derive(Store)]
 pub struct TcpChatClient {
     is_probably_connected: AMSignal<bool>,
+    should_run: AMSignal<bool>,
     incoming: AMSignal<VecDeque<Message>>,
     outgoing: AMSignal<VecDeque<Message>>,
 }
@@ -33,6 +36,7 @@ impl TcpChatClient {
     pub fn new() -> TcpChatClient {
         TcpChatClient {
             is_probably_connected: AMSignal::new(false),
+            should_run: AMSignal::new(true),
             incoming: AMSignal::new(VecDeque::new()),
             outgoing: AMSignal::new(VecDeque::new()),
         }
@@ -58,12 +62,16 @@ impl TcpChatClient {
         };
         println!("Connected to {}", addr);
         self.set_probably_connected(true);
+        self.should_run.set(true);
+
+        let mut set = JoinSet::new();
 
         let read = stream.clone();
-        let read_handle = tokio::spawn(async move {
+        let should_run = self.should_run.clone();
+        set.spawn(async move {
             let mut reader = BufReader::new(read);
             let mut buf = Vec::<u8>::new();
-            loop {
+            while should_run.get() {
                 let mut str = String::new();
                 match reader.read_line(&mut str).await {
                     Err(err) => {
@@ -126,16 +134,22 @@ impl TcpChatClient {
 
             println!("TcpChatClient: stopping read loop");
         });
-        let read_ipc = self.is_probably_connected.clone();
-        spawn(async move {
-            read_handle.await;
-            read_ipc.set(false);
+        // let read_ipc = self.is_probably_connected.clone();
+
+        // let write_ipc = self.is_probably_connected.clone();
+        let should_run = self.should_run.clone();
+        set.spawn(async move {
+            println!("TcpChatClient: stopping write loop");
+            while should_run.get() {
+                tokio::time::sleep(Duration::from_secs(1));
+            }
         });
 
-        let write_ipc = self.is_probably_connected.clone();
-        // tokio::spawn(async move {
-        //     println!("TcpChatClient: stopping write loop");
-        // });
+        let _ = set.join_next().await; // wait for one of the streams to finish
+        self.is_probably_connected.set(false);
+        self.should_run.set(false);
+
+        set.join_all().await;
         Ok(())
     }
 

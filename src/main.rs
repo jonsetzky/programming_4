@@ -1,4 +1,6 @@
 extern crate directories;
+use std::time::Duration;
+
 use directories::ProjectDirs;
 
 use dioxus::prelude::*;
@@ -30,16 +32,28 @@ fn App() -> Element {
     });
 
     let mut username = use_signal(|| String::from("test user"));
-    let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
+    let messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
     use_effect(move || {
         spawn(async move {
-            match app.client().read().connect().await {
-                Ok(_) => println!("connect success"),
-                Err(err) => println!("connect fail {}", err),
-            };
-            // todo handle disconnects by waiting for disconnect and then calling
-            // connect again. loop?
+            let mut sleep_duration = 200;
+            loop {
+                let client = app.client();
+                let client = client.read();
+
+                match client.connect().await {
+                    Ok(_) => {
+                        println!("connect finished");
+                        sleep_duration = 200;
+                    }
+                    Err(err) => {
+                        println!("connect fail {}", err);
+                        sleep_duration = num::clamp(sleep_duration + sleep_duration / 2, 200, 5000);
+                    }
+                };
+
+                tokio::time::sleep(Duration::from_millis(sleep_duration)).await;
+            }
         });
     });
 
