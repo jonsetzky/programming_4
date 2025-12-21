@@ -1,9 +1,4 @@
-use std::{
-    rc::Rc,
-    sync::{Arc, Mutex},
-};
-
-use dioxus::core::{Runtime, RuntimeGuard, ScopeId, spawn};
+use std::sync::{Arc, Mutex};
 
 /// implements a type that stores value within an arc-mutex and
 /// calls dioxus::core::needs_update when updating the value.
@@ -19,6 +14,7 @@ impl<T> AMSignal<T> {
         }
     }
 
+    /// If T doesn't implemet Copy trait, consider using get_inner()  
     pub fn get(&self) -> T
     where
         T: Copy,
@@ -27,6 +23,14 @@ impl<T> AMSignal<T> {
         let val = *inner.lock().unwrap();
         val
     }
+    /// Returns a clone of inner arc mutex
+    // pub fn get_inner(&self) -> Arc<Mutex<T>>
+    // where
+    //     T: Clone,
+    // {
+    //     self.inner.clone()
+    // }
+
     pub fn set(&self, new: T) {
         let inner = self.inner.clone();
         *inner.lock().unwrap() = new;

@@ -1,49 +1,41 @@
-use std::time::SystemTime;
+use std::{cell::RefCell, rc::Rc, time::SystemTime};
 
-use bounded_integer::BoundedUsize;
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
 
 use crate::message_repository::{Message, MessageRepository};
 
-struct POCRepo {
-    messages: Vec<Message>,
+pub struct POCRepo {
+    messages: Rc<RefCell<Vec<Message>>>,
 }
 
 impl POCRepo {
-    fn new() -> POCRepo {
+    pub fn new() -> POCRepo {
         return POCRepo {
-            messages: vec![Message {
-                id: Uuid::new_v4(),
-                reply_to: Some(Uuid::new_v4()),
-                sender: String::from("test sender"),
-                time: SystemTime::now().into(),
-                message: String::from("test message"),
-            }],
+            messages: Rc::new(RefCell::new(vec![Message::new_test("test message")])),
         };
     }
 }
 
-#[allow(unused_variables)]
 impl MessageRepository for POCRepo {
     fn get_message_range(
         &self,
         channel_id: Uuid,
-        from: DateTime<Utc>,
-        to: Duration,
+        to: DateTime<Utc>,
+        since: Duration,
     ) -> Vec<Message> {
-        return self.messages.to_vec();
+        return self.messages.borrow().to_vec();
     }
-    fn add_message(&mut self, message: &Message) {
-        self.messages.push(message.clone());
+    fn add_message(&self, message: &Message) {
+        self.messages.borrow_mut().push(message.clone());
     }
-    fn get_n_messages_before<const N: usize>(
+    fn get_n_messages_before(
         &self,
         channel_id: Uuid,
         from: DateTime<Utc>,
-        count: BoundedUsize<1, 50>,
+        count: usize,
     ) -> Vec<Message> {
-        return self.messages.to_vec();
+        return self.messages.borrow().to_vec();
     }
     fn get_unread_message_count(&self, channel_id: Uuid) -> usize {
         return 0;

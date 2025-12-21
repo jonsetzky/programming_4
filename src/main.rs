@@ -1,5 +1,5 @@
 extern crate directories;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use directories::ProjectDirs;
 
@@ -16,23 +16,41 @@ mod arc_mutex_signal;
 
 mod tcp_chat_client;
 use tcp_chat_client::TcpChatClient;
+use uuid::Uuid;
 
 mod message_repository;
+use crate::message_repository::{Message, MessageRepository};
+// mod sqlite_repository;
 mod poc_repo;
+use poc_repo::POCRepo;
 
 #[derive(Store)]
 struct AppState {
     client: TcpChatClient,
+    repo: Box<dyn MessageRepository>,
 }
 
 #[component]
 fn App() -> Element {
     let app = use_store(|| AppState {
         client: TcpChatClient::new(),
+        repo: Box::new(POCRepo::new()),
     });
 
     let mut username = use_signal(|| String::from("test user"));
-    let messages: Signal<Vec<String>> = use_signal(|| vec![]);
+
+    let mut messages = use_signal(move || {
+        app.repo().read().get_n_messages_before(
+            Uuid::new_v4(),
+            SystemTime::now().into(),
+            10usize.into(),
+        )
+    });
+    let mut add_message = move |msg: &Message| {
+        app.repo().read().add_message(msg);
+        messages.write().push(msg.clone());
+    };
+    // let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
     use_effect(move || {
         spawn(async move {
@@ -40,6 +58,13 @@ fn App() -> Element {
             loop {
                 let client = app.client();
                 let client = client.read();
+
+                let mut rx = client.get_incoming_rx();
+                spawn(async move {
+                    while let Ok(msg) = rx.recv().await {
+                        add_message(&msg);
+                    }
+                });
 
                 match client.connect().await {
                     Ok(_) => {
@@ -61,22 +86,6 @@ fn App() -> Element {
 
     rsx! {
         Timer {}
-        // if *is_connected.read() {
-        //     button {
-        //         onclick: move |_| {
-        //             disconnect();
-        //         },
-        //         "Disconnect"
-        //     }
-        // } else {
-        //     p { "NOT CONNECTED TO SERVER" }
-        //     button {
-        //         onclick: move |_| {
-        //             connect();
-        //         },
-        //         "Connect"
-        //     }
-        // }
         div {
             span { "username" }
             input {
@@ -89,13 +98,14 @@ fn App() -> Element {
         MessageBox {
             disabled: !is_connected,
             onsend: move |message: String| {
-                spawn(async move {
-                    if !is_connected {
-                        println!("Can't send message, because not connected to server.");
-                        return;
-                    }
-                    println!("Sending message: {}", message);
-                });
+                if !is_connected {
+                    println!("Can't send message, because not connected to server.");
+                    return;
+                }
+                let msg = Message::new_test(message.as_str());
+                add_message(&msg);
+                app.client().read().send(msg);
+                dioxus::core::needs_update();
             },
         }
         MessageHistory { messages }
