@@ -15,7 +15,7 @@ impl POCRepo {
         return POCRepo {
             messages: vec![Message {
                 id: Uuid::new_v4(),
-                reply_to: Uuid::new_v4(),
+                reply_to: Some(Uuid::new_v4()),
                 sender: String::from("test sender"),
                 time: SystemTime::now().into(),
                 message: String::from("test message"),

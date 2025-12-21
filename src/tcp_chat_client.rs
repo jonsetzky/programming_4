@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use dioxus::core::spawn;
 use dioxus_stores::Store;
 use serde_json::Value;
@@ -5,7 +6,9 @@ use smol::io::{AsyncBufReadExt, BufReader};
 use smol::net::TcpStream;
 use std::collections::VecDeque;
 use std::io::Error;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 use crate::arc_mutex_signal::AMSignal;
 use crate::message_repository::Message;
@@ -79,8 +82,41 @@ impl TcpChatClient {
                             }
                             Ok(data) => data,
                         };
-                        if data["id"] == MessageType::Chat as i32 {
-                            println!("got chat message: {}", data["message"]);
+                        if data["type"] == MessageType::Chat as i32 {
+                            let message = Message {
+                                id: Uuid::from_str(
+                                    data["id"]
+                                        .as_str()
+                                        .expect("unable to read packet's id field as str"),
+                                )
+                                .expect("unable to parse uuid of message"),
+                                message: String::from(
+                                    data["message"]
+                                        .as_str()
+                                        .expect("unable to read packet's message field as str"),
+                                ),
+                                reply_to: match data["inReplyTo"].as_str() {
+                                    Some(str) => Some(
+                                        Uuid::from_str(str)
+                                            .expect("unable to parse uuid of message"),
+                                    ),
+                                    None => None,
+                                },
+                                sender: String::from(
+                                    data["user"]
+                                        .as_str()
+                                        .expect("unable to read packet's user field as str"),
+                                ),
+                                time: DateTime::<Utc>::from_timestamp(
+                                    data["sent"]
+                                        .as_i64()
+                                        .expect("unable to read packet's sent field as u64"),
+                                    0,
+                                )
+                                .expect("unable to parse sent field as datetime"),
+                            };
+
+                            println!("got chat message: {}", message.message);
                         } else {
                             println!("incoming (unhandled) data: {}", str);
                         }

@@ -13,7 +13,7 @@ pub fn MessageBox(onsend: Callback<String>, disabled: bool) -> Element {
             "Message here"
         }
         button {
-            disabled,
+            disabled: disabled || message.read().len() == 0,
             onclick: move |_| {
                 onsend.call(message.read().cloned());
                 message.set(String::from(""));

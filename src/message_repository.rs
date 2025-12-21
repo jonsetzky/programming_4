@@ -12,7 +12,7 @@ pub struct User {
 #[derive(Clone)]
 pub struct Message {
     pub id: Uuid,
-    pub reply_to: Uuid,
+    pub reply_to: Option<Uuid>,
     pub sender: String,
     pub time: DateTime<Utc>,
     pub message: String,
