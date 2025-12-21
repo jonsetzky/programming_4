@@ -1,83 +1,87 @@
 extern crate directories;
-use chrono::{DateTime, Utc};
 use directories::ProjectDirs;
-use std::time::SystemTime;
 
-use dioxus::{prelude::*, stores::use_store_sync};
+use dioxus::prelude::*;
 use dioxus_desktop::{Config, LogicalSize, WindowBuilder};
 
 mod components;
 use components::*;
 
-mod o4_chat_client;
-use o4_chat_client::O4ChatClient;
+// mod o4_chat_client;
+// use o4_chat_client::O4ChatClient;
+
+mod arc_mutex_signal;
+
+mod tcp_chat_client;
+use tcp_chat_client::TcpChatClient;
+
+mod message_repository;
+mod poc_repo;
 
 #[derive(Store)]
 struct AppState {
-    client: O4ChatClient,
+    client: TcpChatClient,
 }
 
 #[component]
 fn App() -> Element {
-    let app = use_store_sync(|| AppState {
-        client: O4ChatClient::new(None).expect("Couldn't create chat client"),
+    let app = use_store(|| AppState {
+        client: TcpChatClient::new(),
     });
-    let mut is_connected = use_signal(|| false);
 
+    let mut username = use_signal(|| String::from("test user"));
     let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
-    let connect = move || {
+    use_effect(move || {
         spawn(async move {
-            if app.client().read().is_connected() {
-                return;
-            }
-            app.client()
-                .write()
-                .connect()
-                .await
-                .expect("Failed to connect");
-            if app.client().read().is_connected() {
-                is_connected.set(true);
-            }
+            match app.client().read().connect().await {
+                Ok(_) => println!("connect success"),
+                Err(err) => println!("connect fail {}", err),
+            };
+            // todo handle disconnects by waiting for disconnect and then calling
+            // connect again. loop?
         });
-    };
+    });
 
-    let mut disconnect = move || {
-        let mut client = app.client();
-        if !app.client().read().is_connected() {
-            return;
-        }
-        match client.write().disconnect() {
-            Ok(_) => is_connected.set(false),
-            Err(err) => println!("Error disconnecting from server {}", err),
-        }
-    };
-
-    use_effect(connect);
+    let is_connected = app.client().read().is_probably_connected();
 
     rsx! {
         Timer {}
-        if *is_connected.read() {
-            button {
-                onclick: move |_| {
-                    disconnect();
-                },
-                "Disconnect"
-            }
-        } else {
-            p { "NOT CONNECTED TO SERVER" }
-            button {
-                onclick: move |_| {
-                    connect();
-                },
-                "Connect"
+        // if *is_connected.read() {
+        //     button {
+        //         onclick: move |_| {
+        //             disconnect();
+        //         },
+        //         "Disconnect"
+        //     }
+        // } else {
+        //     p { "NOT CONNECTED TO SERVER" }
+        //     button {
+        //         onclick: move |_| {
+        //             connect();
+        //         },
+        //         "Connect"
+        //     }
+        // }
+        div {
+            span { "username" }
+            input {
+                disabled: !is_connected,
+                r#type: "text",
+                value: username.read().cloned(),
+                oninput: move |event| { username.set(event.value()) },
             }
         }
-        p {}
         MessageBox {
+            disabled: !is_connected,
             onsend: move |message: String| {
-                println!("Sending message: {}", message);
-                messages.write().push(message);
+                spawn(async move {
+                    if !is_connected {
+                        println!("Can't send message, because not connected to server.");
+                        return;
+                    }
+                    println!("Sending message: {}", message);
+                });
             },
         }
         MessageHistory { messages }
@@ -99,7 +103,7 @@ fn main() {
            Config::new().with_window(
                WindowBuilder::new()
                     .with_maximizable(false)
-                    .with_decorations(false)
+                    // .with_decorations(false)
                     .with_always_on_top(false)
                     .with_inner_size(LogicalSize {width: 1280, height: 720})
                     .with_title("Neighbor Chat")

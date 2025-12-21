@@ -3,6 +3,9 @@
 Front end for a chat server. Built with [dioxus](https://dioxuslabs.com/)
 which uses WebView2 for rendering.
 
+The app is built for desktop and it being currently implemented closely with `tokio`
+makes it unable to be run directly on the web.
+
 ## Prerequisites
 
 - Maven and JDK 18 or later

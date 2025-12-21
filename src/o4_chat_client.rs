@@ -3,8 +3,10 @@ use std::{
     net::SocketAddr,
     result::Result,
     str::{self, FromStr},
+    sync::{Arc, Mutex},
 };
 
+use serde_json::Value;
 use smol::net;
 
 // todo use these
@@ -20,7 +22,7 @@ enum MessageType {
 
 pub struct O4ChatClient {
     addr: SocketAddr,
-    stream: Option<net::TcpStream>,
+    stream: Arc<Mutex<Option<net::TcpStream>>>,
 }
 
 impl O4ChatClient {
@@ -28,14 +30,17 @@ impl O4ChatClient {
         let addr = addr.unwrap_or("127.0.0.1:10000");
         let addr = SocketAddr::from_str(addr).expect("Error parsing socket address");
 
-        Ok(O4ChatClient { addr, stream: None })
+        Ok(O4ChatClient {
+            addr,
+            stream: Arc::new(Mutex::new(None)),
+        })
     }
 
-    pub async fn connect(&mut self) -> Result<(), Error> {
-        assert!(
-            self.stream.is_none(),
-            "Attempting to connect while client is already connected"
-        );
+    async fn send(&self, data: Value) {
+        let stream = self.stream.clone().lock().unwrap();
+    }
+
+    pub async fn connect(&self) -> Result<(), Error> {
         match net::TcpStream::connect(self.addr).await {
             Err(_err) => Err(_err),
             Ok(_stream) => {
