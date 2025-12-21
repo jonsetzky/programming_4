@@ -3,3 +3,6 @@ pub use message_box::MessageBox;
 
 mod message_history;
 pub use message_history::MessageHistory;
+
+mod timer;
+pub use timer::Timer;
