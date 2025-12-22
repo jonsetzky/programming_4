@@ -6,6 +6,7 @@ use smol::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use smol::net::TcpStream;
 use std::io::Error;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
@@ -14,8 +15,11 @@ use tokio::task::JoinSet;
 use uuid::Uuid;
 
 use crate::arc_mutex_signal::AMSignal;
+use crate::repository::Channel;
 use crate::repository::Packet;
+use crate::repository::PacketBuilder;
 use crate::repository::PacketType;
+use crate::repository::Repository;
 
 enum MessageType {
     // Error = -1,
@@ -33,10 +37,13 @@ pub struct TcpChatClient {
 
     outgoing_tx: Sender<Packet>,
     incoming_tx: Sender<Packet>,
+
+    repo: Arc<Mutex<dyn Repository + Send  + 'static>>,
+    packet_builder: PacketBuilder,
 }
 
 impl TcpChatClient {
-    pub fn new() -> TcpChatClient {
+    pub fn new(packet_builder: PacketBuilder, repo: Arc<Mutex<dyn Repository + Send + 'static>>) -> TcpChatClient {
         let (otx, _) = broadcast::channel::<Packet>(512);
         let (itx, _) = broadcast::channel::<Packet>(512);
 
@@ -46,6 +53,9 @@ impl TcpChatClient {
 
             outgoing_tx: otx,
             incoming_tx: itx,
+
+            repo: repo.clone(),
+            packet_builder
         }
     }
 
@@ -59,6 +69,30 @@ impl TcpChatClient {
 
     pub fn get_incoming_rx(&self) -> Receiver<Packet> {
         self.incoming_tx.subscribe()
+    }
+
+    async fn handle_packet(packet_builder: PacketBuilder, repo: Arc<Mutex<impl Repository + Send + 'static + ?Sized>>, incoming_tx: Sender<Packet>, outgoing_tx: Sender<Packet>, packet: Packet) {
+        match packet.payload {
+            PacketType::RequestChannels { known_channels } => {
+                let my_channels: Vec<Channel>;
+                {
+                    let repo = repo.lock().unwrap();
+                    my_channels = repo.get_channels();
+                }
+                let my_channel_ids = my_channels.iter().map(|c| c.id).collect::<Vec<Uuid>>();
+
+                let new_channel_ids = known_channels.iter().filter(|kc| !my_channel_ids.contains(kc));
+                let new_channels = new_channel_ids.map(|id| {
+                    my_channels.iter().find(|c| c.id == *id).unwrap().clone()
+                }).collect::<Vec<Channel>>();
+
+                let _ = outgoing_tx.send(packet_builder.respond_channels(new_channels));
+                return;
+            },
+            _ => {incoming_tx.send(packet)
+            .expect("incoming thread: unable to send message to incoming channel");},
+        }
+
     }
 
     /// Future finishes when connection ends.
@@ -81,6 +115,9 @@ impl TcpChatClient {
         let read = stream.clone();
         let should_run = self.should_run.clone();
         let tx = self.incoming_tx.clone();
+        let outgoing_tx = self.outgoing_tx.clone();
+        let repo_clone = self.repo.clone();
+        let packet_builder = self.packet_builder;
         set.spawn(async move {
             let mut reader = BufReader::new(read);
             while should_run.get() {
@@ -95,7 +132,7 @@ impl TcpChatClient {
                             break;
                         }
 
-                        let data: Value = match serde_json::from_str(str.as_str()) {
+                            let data: Value = match serde_json::from_str(str.as_str()) {
                             Err(_) => {
                                 println!("Unable to parse incoming data as json");
                                 continue;
@@ -108,7 +145,7 @@ impl TcpChatClient {
                                     "incoming thread: failed to parse message field as str",
                                 ),
                             ) {
-                                Err(err) => {
+                                Err(_) => {
                                     println!(
                                         "incoming thread: Received packet with invalid payload data"
                                     );
@@ -129,11 +166,11 @@ impl TcpChatClient {
                                     )),
                                     None => None,
                                 },
-                                sender: String::from(
+                                sender: Uuid::from_str(String::from(
                                     data["user"]
                                         .as_str()
                                         .expect("incoming thread: unable to read packet's user field as str"),
-                                ),
+                                ).as_str()).expect("got invalid sender uuid"),
                                 time: DateTime::<Utc>::from_timestamp(
                                     data["sent"]
                                         .as_i64()
@@ -142,9 +179,8 @@ impl TcpChatClient {
                                 )
                                 .expect("incoming thread: unable to parse sent field as datetime"),
                             };
-
-                            tx.send(packet)
-                                .expect("incoming thread: unable to send message to incoming channel");
+                            
+                            TcpChatClient::handle_packet(packet_builder, repo_clone.clone(), tx.clone(), outgoing_tx.clone(), packet).await;
                         } else {
                             println!("incoming (unhandled) data: {}", str);
                         }
@@ -191,10 +227,11 @@ impl TcpChatClient {
         });
 
         let keepalive_tx = self.outgoing_tx.clone();
+        let packet_builder = self.packet_builder;
         set.spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_secs(30)).await;
-                keepalive_tx.send(Packet::keepalive());
+                keepalive_tx.send(packet_builder.keepalive());
             }
         });
 

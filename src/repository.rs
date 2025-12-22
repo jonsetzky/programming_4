@@ -1,7 +1,13 @@
-use std::time::SystemTime;
+use std::{
+    sync::{Arc, Mutex},
+    time::SystemTime,
+};
 
 use chrono::{DateTime, Duration, Utc};
+use dioxus::html::u::outline;
 use uuid::Uuid;
+
+use crate::repository;
 
 // pub struct User {
 //     id: Uuid,
@@ -9,50 +15,79 @@ use uuid::Uuid;
 // }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+pub struct Channel {
+    pub id: Uuid,
+    pub name: String,
+}
+
+// todo move this to tcp chat client's module
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub enum PacketType {
+    None,
     KeepAlive,
     Message { channel: Uuid, message: String },
+    RequestChannels { known_channels: Vec<Uuid> },
+    RespondChannels { new_channels: Vec<Channel> },
 }
 
 #[derive(Clone, serde::Serialize, Debug, PartialEq)]
 pub struct Packet {
     pub id: Uuid,
     pub reply_to: Option<Uuid>,
-    pub sender: String,
+    pub sender: Uuid,
     pub time: DateTime<Utc>,
     pub payload: PacketType,
 }
 
-impl Packet {
-    pub fn chat_message(message: String) -> Packet {
-        Packet {
-            // todo use actual uuids
-            id: Uuid::new_v4(),
-            reply_to: Some(Uuid::new_v4()),
-            sender: String::from("test sender"),
-            time: SystemTime::now().into(),
-            payload: PacketType::Message {
-                message,
-                channel: Uuid::new_v4(),
-            },
-        }
-    }
-    pub fn keepalive() -> Packet {
-        Packet {
-            // todo use actual uuids
-            id: Uuid::new_v4(),
-            reply_to: Some(Uuid::new_v4()),
-            sender: String::from("test sender"),
-            time: SystemTime::now().into(),
-            payload: PacketType::KeepAlive,
-        }
-    }
+impl Packet {}
+
+// todo add support for modifying user id?
+#[derive(Clone, Copy)]
+pub struct PacketBuilder {
+    user_id: Uuid,
 }
 
-// pub struct Channel {
-//     id: Uuid,
-//     name: String,
-// }
+impl PacketBuilder {
+    pub fn new(user_id: Uuid) -> PacketBuilder {
+        PacketBuilder { user_id }
+    }
+
+    fn base(self) -> Packet {
+        Packet {
+            // todo use actual uuids
+            id: Uuid::new_v4(),
+            // reply_to: Some(Uuid::new_v4()),
+            reply_to: None,
+            sender: self.user_id,
+            time: SystemTime::now().into(),
+            payload: PacketType::None,
+        }
+    }
+
+    pub fn chat_message(self, message: String) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::Message {
+            message,
+            channel: Uuid::new_v4(),
+        };
+        out
+    }
+    pub fn keepalive(self) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::KeepAlive;
+        out
+    }
+    pub fn request_channels(self, known_channels: Vec<Uuid>) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::RequestChannels { known_channels };
+        out
+    }
+    pub fn respond_channels(self, new_channels: Vec<Channel>) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::RespondChannels { new_channels };
+        out
+    }
+}
 
 #[derive(Clone, serde::Serialize, Debug, PartialEq)]
 pub struct Message {
@@ -75,6 +110,21 @@ impl Message {
             channel: Uuid::new_v4(),
         }
     }
+    pub fn from_packet(packet: &Packet) -> Message {
+        match &packet.payload {
+            PacketType::Message { channel, message } => {
+                Message {
+                    id: packet.id,
+                    // reply_to: Some(Uuid::new_v4()),
+                    sender: packet.sender,
+                    time: packet.time,
+                    message: message.clone(),
+                    channel: channel.clone(),
+                }
+            }
+            _ => panic!("invalid packet type when trying to conver packet to message"),
+        }
+    }
 }
 
 pub trait Repository {
@@ -95,4 +145,6 @@ pub trait Repository {
     fn get_unread_message_count(&self, channel_id: Uuid) -> usize;
 
     fn add_message(&self, message: Message);
+
+    fn get_channels(&self) -> Vec<Channel>;
 }

@@ -1,5 +1,8 @@
 extern crate directories;
-use std::time::{Duration, SystemTime};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, SystemTime},
+};
 
 use directories::ProjectDirs;
 
@@ -19,7 +22,7 @@ use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
 mod repository;
-use crate::repository::{Message, Packet, PacketType, Repository};
+use crate::repository::{Message, Packet, PacketBuilder, PacketType, Repository};
 // mod sqlite_repository;
 mod poc_repo;
 use poc_repo::POCRepo;
@@ -27,20 +30,28 @@ use poc_repo::POCRepo;
 #[derive(Store)]
 struct AppState {
     client: TcpChatClient,
-    repo: Box<dyn Repository>,
+    repo: Arc<Mutex<dyn Repository>>,
+    packet_builder: PacketBuilder,
 }
 
 #[component]
 fn App() -> Element {
-    let app = use_store(|| AppState {
-        client: TcpChatClient::new(),
-        repo: Box::new(POCRepo::new()),
+    let app = use_store(|| {
+        // todo use actual user id
+        let packet_builder = PacketBuilder::new(Uuid::new_v4());
+        let repo = Arc::new(Mutex::new(POCRepo::new()));
+        let client = TcpChatClient::new(packet_builder, repo.clone());
+        let repo = return AppState {
+            client,
+            packet_builder,
+            repo,
+        };
     });
 
     let mut username = use_signal(|| String::from("test user"));
 
     let mut messages = use_signal(move || {
-        app.repo().read().get_n_messages_before(
+        app.repo().read().lock().unwrap().get_n_messages_before(
             Uuid::new_v4(),
             SystemTime::now().into(),
             10usize.into(),
@@ -48,7 +59,7 @@ fn App() -> Element {
     });
     let mut add_message = move |msg: Message| {
         messages.write().push(msg.clone());
-        app.repo().read().add_message(msg);
+        app.repo().read().lock().unwrap().add_message(msg);
     };
     // let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
@@ -61,10 +72,10 @@ fn App() -> Element {
 
                 let mut rx = client.get_incoming_rx();
                 spawn(async move {
-                    while let Ok(msg) = rx.recv().await {
-                        match msg.payload {
+                    while let Ok(ref msg) = rx.recv().await {
+                        match &msg.payload {
                             PacketType::Message { message, .. } => {
-                                add_message(Message::new_test(&message))
+                                add_message(Message::from_packet(msg))
                             }
                             _ => println!("received unhandled PacketType"),
                         };
@@ -107,8 +118,12 @@ fn App() -> Element {
                     println!("Can't send message, because not connected to server.");
                     return;
                 }
-                add_message(Message::new_test(message.as_str()));
-                app.client().read().send(Packet::chat_message(message));
+                add_message(
+                    Message::from_packet(
+                        &app.packet_builder().read().chat_message(message.clone()),
+                    ),
+                );
+                app.client().read().send(app.packet_builder().read().chat_message(message));
                 dioxus::core::needs_update();
             },
         }

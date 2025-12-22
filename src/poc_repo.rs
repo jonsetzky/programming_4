@@ -1,4 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
@@ -6,13 +10,13 @@ use uuid::Uuid;
 use crate::repository::{Message, Repository};
 
 pub struct POCRepo {
-    messages: Rc<RefCell<Vec<Message>>>,
+    messages: Arc<Mutex<Vec<Message>>>,
 }
 
 impl POCRepo {
     pub fn new() -> POCRepo {
         return POCRepo {
-            messages: Rc::new(RefCell::new(vec![Message::new_test("test message")])),
+            messages: Arc::new(Mutex::new(vec![Message::new_test("test message")])),
         };
     }
 }
@@ -24,10 +28,10 @@ impl Repository for POCRepo {
         to: DateTime<Utc>,
         since: Duration,
     ) -> Vec<Message> {
-        return self.messages.borrow().to_vec();
+        return self.messages.lock().unwrap().to_vec();
     }
     fn add_message(&self, message: Message) {
-        self.messages.borrow_mut().push(message.clone());
+        self.messages.lock().unwrap().push(message.clone());
     }
     fn get_n_messages_before(
         &self,
@@ -35,9 +39,12 @@ impl Repository for POCRepo {
         from: DateTime<Utc>,
         count: usize,
     ) -> Vec<Message> {
-        return self.messages.borrow().to_vec();
+        return self.messages.lock().unwrap().to_vec();
     }
     fn get_unread_message_count(&self, channel_id: Uuid) -> usize {
         return 0;
+    }
+    fn get_channels(&self) -> Vec<crate::repository::Channel> {
+        return vec![];
     }
 }
