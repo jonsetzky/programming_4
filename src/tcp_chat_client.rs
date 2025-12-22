@@ -73,6 +73,18 @@ impl TcpChatClient {
 
     async fn handle_packet(packet_builder: PacketBuilder, repo: Arc<Mutex<impl Repository + Send + 'static + ?Sized>>, incoming_tx: Sender<Packet>, outgoing_tx: Sender<Packet>, packet: Packet) {
         match packet.payload {
+            PacketType::Hello {channels_checksum, nickname } => {
+                print!("{} said hello! their channels are {}. ", nickname, channels_checksum);
+                if packet.recipient.is_none() {
+                    println!("saying hello back...");
+                    // todo use actual nick
+                    let resp = packet_builder.hello(repo.lock().unwrap().get_channels_checksum(), String::from("resp nick"), Some(packet.sender));
+                    let _ = outgoing_tx.send(resp);
+                } else {
+                    println!();
+                }
+                
+            },
             PacketType::RequestChannels { known_channels } => {
                 let my_channels: Vec<Channel>;
                 {
@@ -91,6 +103,33 @@ impl TcpChatClient {
             },
             _ => {incoming_tx.send(packet)
             .expect("incoming thread: unable to send message to incoming channel");},
+            PacketType::RespondChannels { new_channels } => {
+                let my_channels: Vec<Channel>;
+                {
+                    let repo = repo.lock().unwrap();
+                    my_channels = repo.get_channels();
+                }
+                let my_channel_ids = my_channels.iter().map(|c| c.id).collect::<Vec<Uuid>>();
+
+                let mut channels_to_add = Vec::<Channel>::new();
+                for channel in new_channels {
+                    // todo add handling for name collision
+                    //    it would require updating local as well as remote databases.
+
+                    // skip known channels
+                    if my_channel_ids.contains(&channel.id) {
+                        continue;
+                    }
+                    
+                    channels_to_add.push(channel.clone());
+                }
+
+                {
+                    let repo = repo.lock().unwrap();
+                    repo.add_channels(channels_to_add);
+                }
+                return;
+            }
         }
 
     }
@@ -153,7 +192,7 @@ impl TcpChatClient {
                                 }
                                 Ok(result) => result,
                             };
-                            let packet = Packet {
+                            let mut packet = Packet {
                                 id: Uuid::from_str(data["id"].as_str().expect(
                                     "incoming thread: unable to read packet's id field as str",
                                 ))
@@ -178,7 +217,12 @@ impl TcpChatClient {
                                     0,
                                 )
                                 .expect("incoming thread: unable to parse sent field as datetime"),
+                                recipient: None
                             };
+
+                            if let Some(recipient) = data["directMessageTo"].as_str() {
+                                packet.recipient = Some(Uuid::from_str(recipient).expect("incoming thread: unable to parse uuid of message"));
+                            }
                             
                             TcpChatClient::handle_packet(packet_builder, repo_clone.clone(), tx.clone(), outgoing_tx.clone(), packet).await;
                         } else {
@@ -198,25 +242,31 @@ impl TcpChatClient {
                 && let Ok(msg) = rx.recv().await
             {
                 let payload = match serde_tran::to_base64(&msg.payload) {
-                    Err(err) => {
+                    Err(_) => {
                         println!("outgoing thread: Failed to convert payload data to base64");
                         continue;
                     }
                     Ok(result) => result,
                 };
 
-                let _ = write
-                    .write(
-                        format!(
-                            "{}\n",
-                            json!({
+                let mut json = json!({
                                 "type": 1,
                                 "id": msg.id,
                                 "message": payload,
                                 "user": msg.sender,
-                                "sent": msg.time.timestamp()
-                            })
-                            .to_string()
+                                "sent": msg.time.timestamp(),
+                            });
+                
+                if msg.recipient.is_some() {
+                    json["directMessageTo"] = json!(msg.recipient.unwrap().to_string());
+                }
+
+
+                let _ = write
+                    .write(
+                        format!(
+                            "{}\n",
+                            json.to_string()
                         )
                         .as_bytes(),
                     )
@@ -226,12 +276,18 @@ impl TcpChatClient {
             println!("TcpChatClient: stopping write loop");
         });
 
-        let keepalive_tx = self.outgoing_tx.clone();
+        let outgoing_tx = self.outgoing_tx.clone();
         let packet_builder = self.packet_builder;
+        let repo_clone = self.repo.clone();
         set.spawn(async move {
+            {
+                // todo use real nickname
+                let _ = outgoing_tx.send(packet_builder.hello(repo_clone.lock().unwrap().get_channels_checksum(), String::from("test nick"), None));
+            }
+
             loop {
                 tokio::time::sleep(Duration::from_secs(30)).await;
-                keepalive_tx.send(packet_builder.keepalive());
+                let _ = outgoing_tx.send(packet_builder.keepalive());
             }
         });
 

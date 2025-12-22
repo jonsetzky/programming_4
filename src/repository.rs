@@ -1,13 +1,8 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::SystemTime,
-};
+use std::time::SystemTime;
 
 use chrono::{DateTime, Duration, Utc};
-use dioxus::html::u::outline;
+use rand::Rng;
 use uuid::Uuid;
-
-use crate::repository;
 
 // pub struct User {
 //     id: Uuid,
@@ -20,14 +15,39 @@ pub struct Channel {
     pub name: String,
 }
 
+impl Channel {
+    pub fn new_test() -> Channel {
+        let name = rand::rng()
+            .sample_iter(&rand::distr::Alphanumeric)
+            .take(4)
+            .map(char::from)
+            .collect::<String>();
+        Channel {
+            id: Uuid::new_v4(),
+            name: name,
+        }
+    }
+}
+
 // todo move this to tcp chat client's module
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub enum PacketType {
     None,
+    Hello {
+        channels_checksum: u32,
+        nickname: String,
+    },
     KeepAlive,
-    Message { channel: Uuid, message: String },
-    RequestChannels { known_channels: Vec<Uuid> },
-    RespondChannels { new_channels: Vec<Channel> },
+    Message {
+        channel: Uuid,
+        message: String,
+    },
+    RequestChannels {
+        known_channels: Vec<Uuid>,
+    },
+    RespondChannels {
+        new_channels: Vec<Channel>,
+    },
 }
 
 #[derive(Clone, serde::Serialize, Debug, PartialEq)]
@@ -35,6 +55,7 @@ pub struct Packet {
     pub id: Uuid,
     pub reply_to: Option<Uuid>,
     pub sender: Uuid,
+    pub recipient: Option<Uuid>,
     pub time: DateTime<Utc>,
     pub payload: PacketType,
 }
@@ -61,6 +82,7 @@ impl PacketBuilder {
             sender: self.user_id,
             time: SystemTime::now().into(),
             payload: PacketType::None,
+            recipient: None,
         }
     }
 
@@ -85,6 +107,20 @@ impl PacketBuilder {
     pub fn respond_channels(self, new_channels: Vec<Channel>) -> Packet {
         let mut out = self.base();
         out.payload = PacketType::RespondChannels { new_channels };
+        out
+    }
+    pub fn hello(
+        self,
+        channels_checksum: u32,
+        nickname: String,
+        recipient: Option<Uuid>,
+    ) -> Packet {
+        let mut out = self.base();
+        out.recipient = recipient;
+        out.payload = PacketType::Hello {
+            channels_checksum,
+            nickname,
+        };
         out
     }
 }
@@ -147,4 +183,6 @@ pub trait Repository {
     fn add_message(&self, message: Message);
 
     fn get_channels(&self) -> Vec<Channel>;
+    fn add_channels(&self, channels: Vec<Channel>);
+    fn get_channels_checksum(&self) -> u32;
 }

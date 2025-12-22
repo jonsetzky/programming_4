@@ -5,18 +5,21 @@ use std::{
 };
 
 use chrono::{DateTime, Duration, Utc};
+use crc32fast::Hasher;
 use uuid::Uuid;
 
-use crate::repository::{Message, Repository};
+use crate::repository::{Channel, Message, Repository};
 
 pub struct POCRepo {
     messages: Arc<Mutex<Vec<Message>>>,
+    channels: Arc<Mutex<Vec<Channel>>>,
 }
 
 impl POCRepo {
     pub fn new() -> POCRepo {
         return POCRepo {
             messages: Arc::new(Mutex::new(vec![Message::new_test("test message")])),
+            channels: Arc::new(Mutex::new(vec![Channel::new_test()])),
         };
     }
 }
@@ -45,6 +48,17 @@ impl Repository for POCRepo {
         return 0;
     }
     fn get_channels(&self) -> Vec<crate::repository::Channel> {
-        return vec![];
+        return self.channels.lock().unwrap().to_vec();
+    }
+    fn add_channels(&self, channels: Vec<Channel>) {
+        let mut channels = channels;
+        self.channels.lock().unwrap().append(&mut channels);
+    }
+    fn get_channels_checksum(&self) -> u32 {
+        let mut hasher = Hasher::new();
+        for channel in self.get_channels() {
+            hasher.update(channel.id.as_bytes());
+        }
+        hasher.finalize()
     }
 }

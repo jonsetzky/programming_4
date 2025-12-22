@@ -2705,11 +2705,13 @@ name = "neighbor_chat"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "crc32fast",
  "dioxus",
  "dioxus-desktop",
  "dioxus-stores",
  "directories",
  "num",
+ "rand 0.9.2",
  "serde",
  "serde_json",
  "serde_tran",

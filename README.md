@@ -56,4 +56,4 @@ cargo run
 
 A client can send RequestChannels packet, which contains uuids of the channels they already know. All other clients respond to that packet with channels that aren't in that request.
 
-A channel name collision can happen. This is resolved by dropping the channel with latter creation timestamp.
+TODO (This isn't implemented): A channel name collision can happen. This is resolved by dropping the channel with latter creation timestamp.

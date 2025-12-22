@@ -64,6 +64,12 @@ fn App() -> Element {
     // let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
     use_effect(move || {
+        {
+            for channel in app.repo().read().lock().unwrap().get_channels() {
+                println!("generated channel {} ({})", channel.name, channel.id);
+            }
+        }
+
         spawn(async move {
             let mut sleep_duration = 200;
             loop {
