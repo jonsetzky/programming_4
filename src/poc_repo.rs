@@ -61,4 +61,7 @@ impl Repository for POCRepo {
         }
         hasher.finalize()
     }
+    fn get_channels_uuids(&self) -> Vec<Uuid> {
+        self.get_channels().iter().map(|c| c.id.clone()).collect()
+    }
 }

@@ -121,8 +121,9 @@ impl PacketBuilder {
         out.payload = PacketType::KeepAlive;
         out
     }
-    pub fn request_channels(&self, known_channels: Vec<Uuid>) -> Packet {
+    pub fn request_channels(&self, known_channels: Vec<Uuid>, recipient: Uuid) -> Packet {
         let mut out = self.base();
+        out.recipient = Some(recipient);
         out.payload = PacketType::RequestChannels { known_channels };
         out
     }
@@ -200,6 +201,7 @@ pub trait Repository {
     fn add_message(&self, message: Message);
 
     fn get_channels(&self) -> Vec<Channel>;
+    fn get_channels_uuids(&self) -> Vec<Uuid>;
     fn add_channels(&self, channels: Vec<Channel>);
     fn get_channels_checksum(&self) -> u32;
 }

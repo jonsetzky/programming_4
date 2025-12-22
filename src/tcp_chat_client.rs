@@ -115,6 +115,15 @@ impl TcpChatClient {
                     println!("saying hello back...");
                     let resp = packet_builder.hello(repo.lock().unwrap().get_channels_checksum(), Some(packet.sender));
                     let _ = outgoing_tx.send(resp);
+                } else if channels_checksum != repo.lock().unwrap().get_channels_checksum() {
+                    // all connected users are expected to have synced their channels so ask the first one for a channel update
+                    let known_channels: Vec<Uuid>;
+                    {
+                        known_channels = repo.lock().unwrap().get_channels_uuids();
+                    }
+
+                    let _ = outgoing_tx.send(packet_builder.request_channels(known_channels, packet.sender));
+                    println!("requesting their channels...");
                 } else {
                     println!();
                 }
@@ -128,11 +137,12 @@ impl TcpChatClient {
                 }
                 let my_channel_ids = my_channels.iter().map(|c| c.id).collect::<Vec<Uuid>>();
 
-                let new_channel_ids = known_channels.iter().filter(|kc| !my_channel_ids.contains(kc));
+                let new_channel_ids = my_channel_ids.iter().filter(|kc| !known_channels.contains(kc));
                 let new_channels = new_channel_ids.map(|id| {
                     my_channels.iter().find(|c| c.id == *id).unwrap().clone()
                 }).collect::<Vec<Channel>>();
 
+                println!("sent {} channels to public", new_channels.len());
                 let _ = outgoing_tx.send(packet_builder.respond_channels(new_channels));
                 return;
             },
@@ -157,6 +167,7 @@ impl TcpChatClient {
                     channels_to_add.push(channel.clone());
                 }
 
+                println!("received {} channels from public", channels_to_add.len());
                 {
                     let repo = repo.lock().unwrap();
                     repo.add_channels(channels_to_add);
