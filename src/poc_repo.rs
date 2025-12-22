@@ -1,8 +1,4 @@
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use chrono::{DateTime, Duration, Utc};
 use crc32fast::Hasher;
@@ -24,6 +20,7 @@ impl POCRepo {
     }
 }
 
+#[allow(unused)]
 impl Repository for POCRepo {
     fn get_message_range(
         &self,

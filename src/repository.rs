@@ -5,7 +5,7 @@ use std::{
 
 use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
-use serde_json::{Error, Value, json};
+use serde_json::{Value, json};
 use serde_tran::ErrorKind;
 use uuid::Uuid;
 
@@ -206,6 +206,7 @@ impl Message {
 }
 
 pub trait Repository {
+    #[allow(dead_code)]
     fn get_message_range(
         &self,
         channel_id: Uuid,
@@ -220,6 +221,7 @@ pub trait Repository {
         count: usize,
     ) -> Vec<Message>;
 
+    #[allow(dead_code)]
     fn get_unread_message_count(&self, channel_id: Uuid) -> usize;
 
     fn add_message(&self, message: Message);

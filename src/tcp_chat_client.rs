@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use dioxus_stores::Store;
 use serde_json::Value;
-use serde_json::json;
 use smol::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use smol::net::TcpStream;
 use std::io::Error;
@@ -33,6 +32,7 @@ enum MessageType {
 
 struct OtherClient {
     id: Uuid,
+    #[allow(unused)]
     channels_checksum: u32,
     last_keepalive: SystemTime,
 }
@@ -326,8 +326,6 @@ impl TcpChatClient {
                     ocs.remove(pos);
                     i = pos;
                 }
-
-                println!("{} clients connected", ocs.len());
             }
         });
 

@@ -22,7 +22,7 @@ use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
 mod repository;
-use crate::repository::{Message, Packet, PacketBuilder, PacketType, Repository};
+use crate::repository::{Message, PacketBuilder, PacketType, Repository};
 // mod sqlite_repository;
 mod poc_repo;
 use poc_repo::POCRepo;
@@ -41,7 +41,7 @@ fn App() -> Element {
         let packet_builder = PacketBuilder::new(Uuid::new_v4(), String::from("n/a"));
         let repo = Arc::new(Mutex::new(POCRepo::new()));
         let client = TcpChatClient::new(packet_builder.clone(), repo.clone());
-        let repo = return AppState {
+        return AppState {
             client,
             packet_builder,
             repo,
@@ -83,9 +83,7 @@ fn App() -> Element {
                 spawn(async move {
                     while let Ok(ref msg) = rx.recv().await {
                         match &msg.payload {
-                            PacketType::Message { message, .. } => {
-                                add_message(Message::from_packet(msg))
-                            }
+                            PacketType::Message { .. } => add_message(Message::from_packet(msg)),
                             _ => println!("received unhandled PacketType"),
                         };
                     }
