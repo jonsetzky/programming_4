@@ -18,8 +18,8 @@ mod tcp_chat_client;
 use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
-mod message_repository;
-use crate::message_repository::{Message, MessageRepository};
+mod repository;
+use crate::repository::{Message, Repository};
 // mod sqlite_repository;
 mod poc_repo;
 use poc_repo::POCRepo;
@@ -27,7 +27,7 @@ use poc_repo::POCRepo;
 #[derive(Store)]
 struct AppState {
     client: TcpChatClient,
-    repo: Box<dyn MessageRepository>,
+    repo: Box<dyn Repository>,
 }
 
 #[component]

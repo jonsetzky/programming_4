@@ -36,7 +36,7 @@ impl Message {
 //     name: String,
 // }
 
-pub trait MessageRepository {
+pub trait Repository {
     fn get_message_range(
         &self,
         channel_id: Uuid,

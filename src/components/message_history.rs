@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::message_repository::Message;
+use crate::repository::Message;
 
 #[component]
 pub fn MessageHistory(messages: Signal<Vec<Message>>) -> Element {

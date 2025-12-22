@@ -13,7 +13,7 @@ use tokio::task::JoinSet;
 use uuid::Uuid;
 
 use crate::arc_mutex_signal::AMSignal;
-use crate::message_repository::Message;
+use crate::repository::Message;
 
 enum MessageType {
     // Error = -1,

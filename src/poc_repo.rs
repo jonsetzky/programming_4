@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc, time::SystemTime};
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
 
-use crate::message_repository::{Message, MessageRepository};
+use crate::repository::{Message, Repository};
 
 pub struct POCRepo {
     messages: Rc<RefCell<Vec<Message>>>,
@@ -17,7 +17,7 @@ impl POCRepo {
     }
 }
 
-impl MessageRepository for POCRepo {
+impl Repository for POCRepo {
     fn get_message_range(
         &self,
         channel_id: Uuid,
