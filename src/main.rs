@@ -63,7 +63,7 @@ fn App() -> Element {
                 spawn(async move {
                     while let Ok(msg) = rx.recv().await {
                         match msg.payload {
-                            PacketType::Message { message } => {
+                            PacketType::Message { message, .. } => {
                                 add_message(Message::new_test(&message))
                             }
                             _ => println!("received unhandled PacketType"),

@@ -104,48 +104,47 @@ impl TcpChatClient {
                         };
                         if data["type"] == MessageType::Chat as i32 {
                             let payload: PacketType = match serde_tran::from_base64(
-                                data["message"]
-                                    .as_str()
-                                    .expect("failed to parse message field as str"),
+                                data["message"].as_str().expect(
+                                    "incoming thread: failed to parse message field as str",
+                                ),
                             ) {
                                 Err(err) => {
-                                    println!("Failed to convert payload data to base64");
+                                    println!(
+                                        "incoming thread: Received packet with invalid payload data"
+                                    );
                                     continue;
                                 }
                                 Ok(result) => result,
                             };
                             let packet = Packet {
-                                id: Uuid::from_str(
-                                    data["id"]
-                                        .as_str()
-                                        .expect("unable to read packet's id field as str"),
-                                )
-                                .expect("unable to parse uuid of message"),
+                                id: Uuid::from_str(data["id"].as_str().expect(
+                                    "incoming thread: unable to read packet's id field as str",
+                                ))
+                                .expect("incoming thread: unable to parse uuid of message"),
                                 // todo! add parsing other that strings
                                 payload,
                                 reply_to: match data["inReplyTo"].as_str() {
-                                    Some(str) => Some(
-                                        Uuid::from_str(str)
-                                            .expect("unable to parse uuid of message"),
-                                    ),
+                                    Some(str) => Some(Uuid::from_str(str).expect(
+                                        "incoming thread: unable to parse uuid of message",
+                                    )),
                                     None => None,
                                 },
                                 sender: String::from(
                                     data["user"]
                                         .as_str()
-                                        .expect("unable to read packet's user field as str"),
+                                        .expect("incoming thread: unable to read packet's user field as str"),
                                 ),
                                 time: DateTime::<Utc>::from_timestamp(
                                     data["sent"]
                                         .as_i64()
-                                        .expect("unable to read packet's sent field as u64"),
+                                        .expect("incoming thread: unable to read packet's sent field as u64"),
                                     0,
                                 )
-                                .expect("unable to parse sent field as datetime"),
+                                .expect("incoming thread: unable to parse sent field as datetime"),
                             };
 
                             tx.send(packet)
-                                .expect("unable to send message to incoming channel");
+                                .expect("incoming thread: unable to send message to incoming channel");
                         } else {
                             println!("incoming (unhandled) data: {}", str);
                         }
@@ -164,7 +163,7 @@ impl TcpChatClient {
             {
                 let payload = match serde_tran::to_base64(&msg.payload) {
                     Err(err) => {
-                        println!("Failed to convert payload data to base64");
+                        println!("outgoing thread: Failed to convert payload data to base64");
                         continue;
                     }
                     Ok(result) => result,

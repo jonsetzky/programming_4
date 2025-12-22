@@ -3,7 +3,6 @@ use std::time::SystemTime;
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
 
-// todo add easy implementation for converting to json
 // pub struct User {
 //     id: Uuid,
 //     name: String,
@@ -12,9 +11,9 @@ use uuid::Uuid;
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub enum PacketType {
     KeepAlive,
-    Message { message: String },
+    Message { channel: Uuid, message: String },
 }
-// todo add easy implementation for converting to json
+
 #[derive(Clone, serde::Serialize, Debug, PartialEq)]
 pub struct Packet {
     pub id: Uuid,
@@ -27,15 +26,20 @@ pub struct Packet {
 impl Packet {
     pub fn chat_message(message: String) -> Packet {
         Packet {
+            // todo use actual uuids
             id: Uuid::new_v4(),
             reply_to: Some(Uuid::new_v4()),
             sender: String::from("test sender"),
             time: SystemTime::now().into(),
-            payload: PacketType::Message { message },
+            payload: PacketType::Message {
+                message,
+                channel: Uuid::new_v4(),
+            },
         }
     }
     pub fn keepalive() -> Packet {
         Packet {
+            // todo use actual uuids
             id: Uuid::new_v4(),
             reply_to: Some(Uuid::new_v4()),
             sender: String::from("test sender"),
@@ -50,7 +54,6 @@ impl Packet {
 //     name: String,
 // }
 
-// todo add easy implementation for converting to json
 #[derive(Clone, serde::Serialize, Debug, PartialEq)]
 pub struct Message {
     pub id: Uuid,
