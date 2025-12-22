@@ -5,6 +5,8 @@ use std::{
 
 use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
+use serde_json::{Error, Value, json};
+use serde_tran::ErrorKind;
 use uuid::Uuid;
 
 // pub struct User {
@@ -63,7 +65,29 @@ pub struct Packet {
     pub payload: PacketType,
 }
 
-impl Packet {}
+impl Packet {
+    pub fn into_json(self) -> Result<Value, ErrorKind> {
+        let payload = match serde_tran::to_base64(&self.payload) {
+            Err(err) => {
+                println!("Failed to convert payload data to base64");
+                return Err(err);
+            }
+            Ok(result) => result,
+        };
+        let mut json = json!({
+            "type": 1,
+            "id": self.id,
+            "message": payload,
+            "user": self.sender,
+            "sent": self.time.timestamp(),
+        });
+
+        if self.recipient.is_some() {
+            json["directMessageTo"] = json!(self.recipient.unwrap().to_string());
+        }
+        Ok(json)
+    }
+}
 
 // todo add support for modifying user id?
 #[derive(Clone)]

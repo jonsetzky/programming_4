@@ -290,34 +290,13 @@ impl TcpChatClient {
             while should_run.get()
                 && let Ok(msg) = rx.recv().await
             {
-                let payload = match serde_tran::to_base64(&msg.payload) {
-                    Err(_) => {
-                        println!("outgoing thread: Failed to convert payload data to base64");
-                        continue;
-                    }
-                    Ok(result) => result,
+                let Ok(data) = msg.into_json() else {
+                    continue;
                 };
-
-                let mut json = json!({
-                                "type": 1,
-                                "id": msg.id,
-                                "message": payload,
-                                "user": msg.sender,
-                                "sent": msg.time.timestamp(),
-                            });
-                
-                if msg.recipient.is_some() {
-                    json["directMessageTo"] = json!(msg.recipient.unwrap().to_string());
-                }
 
 
                 let _ = write
-                    .write(
-                        format!(
-                            "{}\n",
-                            json.to_string()
-                        )
-                        .as_bytes(),
+                    .write(format!( "{data}\n").as_bytes(),
                     )
                     .await;
             }
