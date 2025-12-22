@@ -8,6 +8,7 @@ use std::io::Error;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use std::time::SystemTime;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
@@ -30,6 +31,12 @@ enum MessageType {
     // ListChannels = 4,
 }
 
+struct OtherClient {
+    id: Uuid,
+    channels_checksum: u32,
+    last_keepalive: SystemTime,
+}
+
 #[derive(Store)]
 pub struct TcpChatClient {
     is_probably_connected: AMSignal<bool>,
@@ -40,6 +47,8 @@ pub struct TcpChatClient {
 
     repo: Arc<Mutex<dyn Repository + Send  + 'static>>,
     packet_builder: PacketBuilder,
+
+    other_clients: Arc<Mutex<Vec<OtherClient>>>,
 }
 
 impl TcpChatClient {
@@ -55,7 +64,9 @@ impl TcpChatClient {
             incoming_tx: itx,
 
             repo: repo.clone(),
-            packet_builder
+            packet_builder,
+
+            other_clients: Arc::new(Mutex::new(Vec::<OtherClient>::new())),
         }
     }
 
@@ -71,10 +82,35 @@ impl TcpChatClient {
         self.incoming_tx.subscribe()
     }
 
-    async fn handle_packet(packet_builder: PacketBuilder, repo: Arc<Mutex<impl Repository + Send + 'static + ?Sized>>, incoming_tx: Sender<Packet>, outgoing_tx: Sender<Packet>, packet: Packet) {
+    async fn handle_packet(
+        packet_builder: PacketBuilder, 
+        repo: Arc<Mutex<impl Repository + Send + 'static + ?Sized>>, 
+        incoming_tx: Sender<Packet>, 
+        outgoing_tx: Sender<Packet>, 
+        other_clients: Arc<Mutex<Vec<OtherClient>>>, 
+        packet: Packet) {
         match packet.payload {
+            PacketType::KeepAlive => {
+                let mut ocs = other_clients.lock().unwrap();
+                for oc in ocs.as_mut_slice() {
+                    if oc.id == packet.sender {
+                        oc.last_keepalive = SystemTime::now();
+                        break;
+                    }
+                }
+            },
             PacketType::Hello {channels_checksum, nickname } => {
                 print!("{} said hello! their channels are {}. ", nickname, channels_checksum);
+
+                {
+                    let mut ocs = other_clients.lock().unwrap();
+                    ocs.push(OtherClient {
+                        id: packet.sender,
+                        channels_checksum,
+                        last_keepalive: SystemTime::now()
+                    })
+                }
+
                 if packet.recipient.is_none() {
                     println!("saying hello back...");
                     let resp = packet_builder.hello(repo.lock().unwrap().get_channels_checksum(), Some(packet.sender));
@@ -158,6 +194,7 @@ impl TcpChatClient {
         let outgoing_tx = self.outgoing_tx.clone();
         let repo_clone = self.repo.clone();
         let packet_builder = self.packet_builder.clone();
+        let other_clients = self.other_clients.clone();
         set.spawn(async move {
             let mut reader = BufReader::new(read);
             while should_run.get() {
@@ -225,7 +262,7 @@ impl TcpChatClient {
                                 packet.recipient = Some(Uuid::from_str(recipient).expect("incoming thread: unable to parse uuid of message"));
                             }
                             
-                            TcpChatClient::handle_packet(packet_builder.clone(), repo_clone.clone(), tx.clone(), outgoing_tx.clone(), packet).await;
+                            TcpChatClient::handle_packet(packet_builder.clone(), repo_clone.clone(), tx.clone(), outgoing_tx.clone(), other_clients.clone(), packet).await;
                         } else {
                             println!("incoming (unhandled) data: {}", str);
                         }
@@ -280,6 +317,7 @@ impl TcpChatClient {
         let outgoing_tx = self.outgoing_tx.clone();
         let packet_builder = self.packet_builder.clone();
         let repo_clone = self.repo.clone();
+        let other_clients = self.other_clients.clone();
         set.spawn(async move {
             {
                 let _ = outgoing_tx.send(packet_builder.hello(repo_clone.lock().unwrap().get_channels_checksum(), None));
@@ -288,6 +326,18 @@ impl TcpChatClient {
             loop {
                 tokio::time::sleep(Duration::from_secs(30)).await;
                 let _ = outgoing_tx.send(packet_builder.keepalive());
+
+
+                // remove stale clients
+                let now = SystemTime::now();
+                let mut ocs = other_clients.lock().unwrap();
+                let mut i = 0usize;
+                while let Some(pos) = ocs[i..].iter().position(|oc| oc.last_keepalive + Duration::from_mins(1) <= now) {
+                    ocs.remove(pos);
+                    i = pos;
+                }
+
+                println!("{} clients connected", ocs.len());
             }
         });
 
