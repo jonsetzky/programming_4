@@ -38,9 +38,9 @@ struct AppState {
 fn App() -> Element {
     let app = use_store(|| {
         // todo use actual user id
-        let packet_builder = PacketBuilder::new(Uuid::new_v4());
+        let packet_builder = PacketBuilder::new(Uuid::new_v4(), String::from("n/a"));
         let repo = Arc::new(Mutex::new(POCRepo::new()));
-        let client = TcpChatClient::new(packet_builder, repo.clone());
+        let client = TcpChatClient::new(packet_builder.clone(), repo.clone());
         let repo = return AppState {
             client,
             packet_builder,
@@ -49,6 +49,9 @@ fn App() -> Element {
     });
 
     let mut username = use_signal(|| String::from("test user"));
+    use_effect(move || {
+        app.packet_builder().read().set_nickname(&username.read());
+    });
 
     let mut messages = use_signal(move || {
         app.repo().read().lock().unwrap().get_n_messages_before(
@@ -124,12 +127,9 @@ fn App() -> Element {
                     println!("Can't send message, because not connected to server.");
                     return;
                 }
-                add_message(
-                    Message::from_packet(
-                        &app.packet_builder().read().chat_message(message.clone()),
-                    ),
-                );
-                app.client().read().send(app.packet_builder().read().chat_message(message));
+                let packet = app.packet_builder().read().clone().chat_message(message);
+                add_message(Message::from_packet(&packet));
+                app.client().read().send(packet);
                 dioxus::core::needs_update();
             },
         }

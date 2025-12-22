@@ -1,4 +1,7 @@
-use std::time::SystemTime;
+use std::{
+    sync::{Arc, Mutex},
+    time::SystemTime,
+};
 
 use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
@@ -63,17 +66,36 @@ pub struct Packet {
 impl Packet {}
 
 // todo add support for modifying user id?
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct PacketBuilder {
+    /// ! DO NOT MODIFY THIS
     user_id: Uuid,
+    nickname: Arc<Mutex<String>>,
 }
 
 impl PacketBuilder {
-    pub fn new(user_id: Uuid) -> PacketBuilder {
-        PacketBuilder { user_id }
+    pub fn clone(&self) -> PacketBuilder {
+        PacketBuilder {
+            user_id: self.user_id.clone(),
+            nickname: self.nickname.clone(),
+        }
     }
 
-    fn base(self) -> Packet {
+    pub fn set_nickname(&self, new: &String) {
+        let mut nick = self.nickname.lock().unwrap();
+        *nick = new.to_string();
+    }
+}
+
+impl PacketBuilder {
+    pub fn new(user_id: Uuid, nickname: String) -> PacketBuilder {
+        PacketBuilder {
+            user_id,
+            nickname: Arc::new(Mutex::new(nickname)),
+        }
+    }
+
+    fn base(&self) -> Packet {
         Packet {
             // todo use actual uuids
             id: Uuid::new_v4(),
@@ -86,7 +108,7 @@ impl PacketBuilder {
         }
     }
 
-    pub fn chat_message(self, message: String) -> Packet {
+    pub fn chat_message(&self, message: String) -> Packet {
         let mut out = self.base();
         out.payload = PacketType::Message {
             message,
@@ -94,32 +116,27 @@ impl PacketBuilder {
         };
         out
     }
-    pub fn keepalive(self) -> Packet {
+    pub fn keepalive(&self) -> Packet {
         let mut out = self.base();
         out.payload = PacketType::KeepAlive;
         out
     }
-    pub fn request_channels(self, known_channels: Vec<Uuid>) -> Packet {
+    pub fn request_channels(&self, known_channels: Vec<Uuid>) -> Packet {
         let mut out = self.base();
         out.payload = PacketType::RequestChannels { known_channels };
         out
     }
-    pub fn respond_channels(self, new_channels: Vec<Channel>) -> Packet {
+    pub fn respond_channels(&self, new_channels: Vec<Channel>) -> Packet {
         let mut out = self.base();
         out.payload = PacketType::RespondChannels { new_channels };
         out
     }
-    pub fn hello(
-        self,
-        channels_checksum: u32,
-        nickname: String,
-        recipient: Option<Uuid>,
-    ) -> Packet {
+    pub fn hello(&self, channels_checksum: u32, recipient: Option<Uuid>) -> Packet {
         let mut out = self.base();
         out.recipient = recipient;
         out.payload = PacketType::Hello {
             channels_checksum,
-            nickname,
+            nickname: self.nickname.lock().unwrap().clone(),
         };
         out
     }

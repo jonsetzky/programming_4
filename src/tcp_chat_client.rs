@@ -77,8 +77,7 @@ impl TcpChatClient {
                 print!("{} said hello! their channels are {}. ", nickname, channels_checksum);
                 if packet.recipient.is_none() {
                     println!("saying hello back...");
-                    // todo use actual nick
-                    let resp = packet_builder.hello(repo.lock().unwrap().get_channels_checksum(), String::from("resp nick"), Some(packet.sender));
+                    let resp = packet_builder.hello(repo.lock().unwrap().get_channels_checksum(), Some(packet.sender));
                     let _ = outgoing_tx.send(resp);
                 } else {
                     println!();
@@ -101,8 +100,6 @@ impl TcpChatClient {
                 let _ = outgoing_tx.send(packet_builder.respond_channels(new_channels));
                 return;
             },
-            _ => {incoming_tx.send(packet)
-            .expect("incoming thread: unable to send message to incoming channel");},
             PacketType::RespondChannels { new_channels } => {
                 let my_channels: Vec<Channel>;
                 {
@@ -130,6 +127,10 @@ impl TcpChatClient {
                 }
                 return;
             }
+            _ => {
+                incoming_tx.send(packet)
+                .expect("incoming thread: unable to send message to incoming channel");
+            },
         }
 
     }
@@ -156,7 +157,7 @@ impl TcpChatClient {
         let tx = self.incoming_tx.clone();
         let outgoing_tx = self.outgoing_tx.clone();
         let repo_clone = self.repo.clone();
-        let packet_builder = self.packet_builder;
+        let packet_builder = self.packet_builder.clone();
         set.spawn(async move {
             let mut reader = BufReader::new(read);
             while should_run.get() {
@@ -224,7 +225,7 @@ impl TcpChatClient {
                                 packet.recipient = Some(Uuid::from_str(recipient).expect("incoming thread: unable to parse uuid of message"));
                             }
                             
-                            TcpChatClient::handle_packet(packet_builder, repo_clone.clone(), tx.clone(), outgoing_tx.clone(), packet).await;
+                            TcpChatClient::handle_packet(packet_builder.clone(), repo_clone.clone(), tx.clone(), outgoing_tx.clone(), packet).await;
                         } else {
                             println!("incoming (unhandled) data: {}", str);
                         }
@@ -277,12 +278,11 @@ impl TcpChatClient {
         });
 
         let outgoing_tx = self.outgoing_tx.clone();
-        let packet_builder = self.packet_builder;
+        let packet_builder = self.packet_builder.clone();
         let repo_clone = self.repo.clone();
         set.spawn(async move {
             {
-                // todo use real nickname
-                let _ = outgoing_tx.send(packet_builder.hello(repo_clone.lock().unwrap().get_channels_checksum(), String::from("test nick"), None));
+                let _ = outgoing_tx.send(packet_builder.hello(repo_clone.lock().unwrap().get_channels_checksum(), None));
             }
 
             loop {
