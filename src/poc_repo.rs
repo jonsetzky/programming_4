@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, time::SystemTime};
+use std::{cell::RefCell, rc::Rc};
 
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
@@ -26,7 +26,7 @@ impl Repository for POCRepo {
     ) -> Vec<Message> {
         return self.messages.borrow().to_vec();
     }
-    fn add_message(&self, message: &Message) {
+    fn add_message(&self, message: Message) {
         self.messages.borrow_mut().push(message.clone());
     }
     fn get_n_messages_before(

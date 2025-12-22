@@ -19,7 +19,7 @@ use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
 mod repository;
-use crate::repository::{Message, Repository};
+use crate::repository::{Message, Packet, PacketType, Repository};
 // mod sqlite_repository;
 mod poc_repo;
 use poc_repo::POCRepo;
@@ -46,9 +46,9 @@ fn App() -> Element {
             10usize.into(),
         )
     });
-    let mut add_message = move |msg: &Message| {
-        app.repo().read().add_message(msg);
+    let mut add_message = move |msg: Message| {
         messages.write().push(msg.clone());
+        app.repo().read().add_message(msg);
     };
     // let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
@@ -62,7 +62,12 @@ fn App() -> Element {
                 let mut rx = client.get_incoming_rx();
                 spawn(async move {
                     while let Ok(msg) = rx.recv().await {
-                        add_message(&msg);
+                        match msg.payload {
+                            PacketType::Message { message } => {
+                                add_message(Message::new_test(&message))
+                            }
+                            _ => println!("received unhandled PacketType"),
+                        };
                     }
                 });
 
@@ -102,9 +107,8 @@ fn App() -> Element {
                     println!("Can't send message, because not connected to server.");
                     return;
                 }
-                let msg = Message::new_test(message.as_str());
-                add_message(&msg);
-                app.client().read().send(msg);
+                add_message(Message::new_test(message.as_str()));
+                app.client().read().send(Packet::chat_message(message));
                 dioxus::core::needs_update();
             },
         }
