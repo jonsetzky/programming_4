@@ -23,7 +23,7 @@ use uuid::Uuid;
 mod repository;
 use crate::{
     models::MessageModel,
-    repository::{Message, Repository},
+    repository::{Channel, Message, Repository},
     sqlite_repository::{SqliteRepository, establish_connection, run_migrations},
     tcp_chat_client::{PacketBuilder, PacketType},
 };
@@ -53,6 +53,11 @@ fn App() -> Element {
         };
     });
 
+    // todo channels added from other clients arent yet added here
+    let mut all_channels: Signal<Vec<Channel>> = use_signal(|| vec![]);
+    let mut channel: Signal<Option<Channel>> = use_signal(|| None);
+    let mut channel_input = use_signal(|| String::from(""));
+
     let mut username = use_signal(|| String::from("test user"));
     use_effect(move || {
         app.packet_builder().read().set_nickname(&username.read());
@@ -71,11 +76,12 @@ fn App() -> Element {
     };
     // let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
+    let mut alert_message: Signal<Option<String>> = use_signal(|| None);
+    let mut show_alert = use_signal(|| false);
+
     use_effect(move || {
         {
-            for channel in app.repo().read().lock().unwrap().get_channels() {
-                println!("generated channel {} ({})", channel.name, channel.id);
-            }
+            all_channels.set(app.repo().read().lock().unwrap().get_channels());
         }
 
         spawn(async move {
@@ -115,6 +121,7 @@ fn App() -> Element {
     rsx! {
         Timer {}
         div {
+            h3 { "username" }
             span { "username" }
             input {
                 disabled: !is_connected,
@@ -124,16 +131,72 @@ fn App() -> Element {
             }
         }
         div {
-            button {
-                onclick: move |_| {
-                    for channel in app.repo().read().lock().unwrap().get_channels() {
-                        println!("Channel {}'s id is {}", channel.name, channel.id);
-                    }
-                },
-                "print channels"
+            h3 { "channels" }
+            p {
+                span { "current channel: " }
+                if let Some(c) = channel.read().clone() {
+                    span { "{c.name}" }
+                } else {
+                    span { "none " }
+                }
+                button {
+                    disabled: channel.read().is_none(),
+                    onclick: move |_| channel.set(None),
+                    "leave"
+                }
+            }
+            p {
+                span { "channels available: " }
+                for channel in all_channels.read().iter() {
+                    span { r#""{channel.name.clone()}","# }
+                }
+            }
+            div {
+                span { "create/change a channel" }
+                input {
+                    // disabled: channel_input.read().len() < 1,
+                    r#type: "text",
+                    value: channel_input.read().cloned(),
+                    oninput: move |event| { channel_input.set(event.value()) },
+                }
+                button {
+                    disabled: channel_input.read().len() < 1,
+                    onclick: move |_| {
+                        let new_channel = Channel {
+                            id: Uuid::new_v4(),
+                            name: channel_input.read().cloned(),
+                        };
+                        {
+                            app.repo().read().lock().unwrap().add_channels(vec![new_channel.clone()]);
+                        }
+                        channel_input.set(String::from(""));
+                        all_channels.write().push(new_channel.clone());
+                        channel.set(Some(new_channel.clone()));
+                        let packet = app.packet_builder().read().respond_channels(vec![new_channel]);
+                        app.client().read().send(packet);
+                    },
+                    "create"
+                }
+                button {
+                    disabled: all_channels.read().iter().find(|c| c.name == *channel_input.read()).is_none(),
+                    onclick: move |_| {
+                        let new_channel = all_channels
+                            .read()
+                            .clone()
+                            .into_iter()
+                            .find(|c| c.name == *channel_input.read())
+                            .unwrap();
+                        {
+                            app.repo().read().lock().unwrap().add_channels(vec![new_channel.clone()]);
+                        }
+                        channel.set(Some(new_channel.clone()));
+                        channel_input.set(String::from(""));
+                    },
+                    "change to"
+                }
             }
         }
-        p {}
+        h3 { "chat" }
         MessageBox {
             disabled: !is_connected,
             onsend: move |message: String| {
@@ -147,7 +210,14 @@ fn App() -> Element {
                 dioxus::core::needs_update();
             },
         }
-        MessageHistory { messages }
+        if channel.read().is_none() {
+            p { "not in a channel, no history to show" }
+        } else {
+            MessageHistory { messages }
+        }
+        div {
+            button { onclick: move |_| show_alert.set(true), "Show Alert" }
+        }
     }
 }
 
