@@ -3,6 +3,7 @@ use diesel::{
     backend::Backend,
     deserialize::{FromSql, FromSqlRow},
     prelude::*,
+    serialize::ToSql,
     sql_types::Binary,
     sqlite::Sqlite,
 };
@@ -20,7 +21,7 @@ pub struct Message {
     message: String,
 }
 
-#[derive(FromSqlRow)]
+#[derive(FromSqlRow, Debug)]
 pub struct UuidWrapper(pub Uuid);
 
 impl FromSql<Binary, Sqlite> for UuidWrapper {
@@ -34,6 +35,15 @@ impl FromSql<Binary, Sqlite> for UuidWrapper {
             };
             Ok(UuidWrapper(Uuid::from_bytes(res)))
         }
+    }
+}
+
+impl ToSql<Binary, Sqlite> for UuidWrapper {
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut diesel::serialize::Output<'b, '_, Sqlite>,
+    ) -> diesel::serialize::Result {
+        <[u8] as ToSql<Binary, Sqlite>>::to_sql(self.0.as_bytes(), out)
     }
 }
 
