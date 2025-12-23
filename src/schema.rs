@@ -3,7 +3,7 @@ diesel::table! {
         id -> Binary,
         channel -> Binary,
         sender -> Binary,
-        time -> Time,
+        time -> TimestamptzSqlite,
         message -> Text,
     }
 }
