@@ -9,18 +9,6 @@ use diesel::{
 };
 use uuid::Uuid;
 
-#[derive(Queryable, Selectable)]
-#[diesel(table_name = crate::schema::messages)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
-pub struct Message {
-    id: UuidWrapper,
-    channel: UuidWrapper,
-    sender: UuidWrapper,
-    // reply_to: Uuid,
-    time: DateTime<Utc>,
-    message: String,
-}
-
 #[derive(FromSqlRow, Debug)]
 pub struct UuidWrapper(pub Uuid);
 
@@ -45,6 +33,26 @@ impl ToSql<Binary, Sqlite> for UuidWrapper {
     ) -> diesel::serialize::Result {
         <[u8] as ToSql<Binary, Sqlite>>::to_sql(self.0.as_bytes(), out)
     }
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = crate::schema::messages)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct Message {
+    id: UuidWrapper,
+    channel: UuidWrapper,
+    sender: UuidWrapper,
+    // reply_to: Uuid,
+    time: DateTime<Utc>,
+    message: String,
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = crate::schema::channels)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct Channel {
+    id: UuidWrapper,
+    name: String,
 }
 
 impl Message {

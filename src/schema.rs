@@ -7,3 +7,10 @@ diesel::table! {
         message -> Text,
     }
 }
+
+diesel::table! {
+    channels (id) {
+        id -> Binary,
+        name -> Text,
+    }
+}
