@@ -24,7 +24,7 @@ use uuid::Uuid;
 
 mod repository;
 use crate::{
-    models::Message as MessageModel,
+    models::MessageModel,
     repository::{Message, Repository},
     sqlite_repository::{establish_connection, run_migrations},
     tcp_chat_client::{PacketBuilder, PacketType},
