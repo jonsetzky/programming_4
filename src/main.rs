@@ -26,7 +26,7 @@ mod repository;
 use crate::{
     models::MessageModel,
     repository::{Message, Repository},
-    sqlite_repository::{establish_connection, run_migrations},
+    sqlite_repository::{SqliteRepository, establish_connection, run_migrations},
     tcp_chat_client::{PacketBuilder, PacketType},
 };
 mod models;
@@ -47,7 +47,7 @@ fn App() -> Element {
     let app = use_store(|| {
         // todo use actual user id
         let packet_builder = PacketBuilder::new(Uuid::new_v4(), String::from("n/a"));
-        let repo = Arc::new(Mutex::new(POCRepo::new()));
+        let repo = Arc::new(Mutex::new(SqliteRepository::new()));
         let client = TcpChatClient::new(packet_builder.clone(), repo.clone());
         return AppState {
             client,

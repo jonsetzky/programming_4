@@ -30,7 +30,7 @@ pub fn establish_connection() -> SqliteConnection {
     SqliteConnection::establish(&path).unwrap_or_else(|_| panic!("Error connecting to {}", path))
 }
 
-struct SqliteRepository {
+pub struct SqliteRepository {
     conn: RefCell<SqliteConnection>,
 }
 
@@ -76,9 +76,13 @@ impl Repository for SqliteRepository {
     fn add_message(&self, msg: Message) {
         let mut conn = self.conn.borrow_mut();
 
-        let _ = diesel::insert_into(messages)
+        match diesel::insert_into(messages)
             .values(MessageModel::from(msg))
-            .execute(&mut conn as &mut SqliteConnection);
+            .execute(&mut conn as &mut SqliteConnection)
+        {
+            Ok(_) => println!("successfully added message"),
+            Err(err) => println!("failed to add message"),
+        };
     }
     #[allow(unused_variables)]
     fn get_message_range(
@@ -99,12 +103,14 @@ impl Repository for SqliteRepository {
         let mut conn = self.conn.borrow_mut();
         messages
             .filter(time.le(from))
-            .filter(channel.eq(UuidWrapper(channel_id)))
+            // .filter(channel.eq(UuidWrapper(channel_id)))
             .limit(clamp(count as i64, 0, 50))
             .select(MessageModel::as_select())
             .load(&mut conn as &mut SqliteConnection)
-            .expect("failed to load n messages before from db");
-        todo!();
+            .expect("failed to load n messages before from db")
+            .into_iter()
+            .map(Message::from)
+            .collect()
     }
     #[allow(unused_variables)]
     fn get_unread_message_count(&self, channel_id: Uuid) -> usize {
