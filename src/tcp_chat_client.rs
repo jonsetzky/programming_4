@@ -240,7 +240,6 @@ impl TcpChatClient {
                                     "incoming thread: unable to read packet's id field as str",
                                 ))
                                 .expect("incoming thread: unable to parse uuid of message"),
-                                // todo! add parsing other that strings
                                 payload,
                                 reply_to: match data["inReplyTo"].as_str() {
                                     Some(str) => Some(Uuid::from_str(str).expect(
