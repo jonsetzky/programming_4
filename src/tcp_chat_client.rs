@@ -127,11 +127,11 @@ impl PacketBuilder {
         }
     }
 
-    pub fn chat_message(&self, message: String) -> Packet {
+    pub fn chat_message(&self, channel: Uuid, message: String) -> Packet {
         let mut out = self.base();
         out.payload = PacketType::Message {
             message,
-            channel: Uuid::new_v4(),
+            channel,
         };
         out
     }

@@ -71,8 +71,16 @@ fn App() -> Element {
         )
     });
     let mut add_message = move |msg: Message| {
-        messages.write().push(msg.clone());
-        app.repo().read().lock().unwrap().add_message(msg);
+        // messages.write().push(msg.clone());
+        let repo = app.repo();
+        let repo = repo.read();
+        let repo = repo.lock().unwrap();
+        repo.add_message(msg.clone());
+        if let Some(chl) = channel.read().cloned()
+            && msg.channel == chl.id
+        {
+            messages.write().push(msg);
+        }
     };
     // let mut messages: Signal<Vec<String>> = use_signal(|| vec![]);
 
@@ -116,6 +124,21 @@ fn App() -> Element {
         });
     });
 
+    use_effect(move || {
+        match channel.read().clone() {
+            None => {
+                messages.set(vec![]);
+            }
+            Some(chl) => {
+                messages.set(app.repo().read().lock().unwrap().get_n_messages_before(
+                    channel.read().as_ref().unwrap().id,
+                    SystemTime::now().into(),
+                    10usize.into(),
+                ));
+            }
+        };
+    });
+
     let is_connected = app.client().read().is_probably_connected();
 
     rsx! {
@@ -146,7 +169,14 @@ fn App() -> Element {
                 }
             }
             p {
-                span { "channels available: " }
+                span { "channels available" }
+                button {
+                    onclick: move |_| {
+                        all_channels.set(app.repo().read().lock().unwrap().get_channels());
+                    },
+                    "refresh"
+                }
+                span { ": " }
                 for channel in all_channels.read().iter() {
                     span { r#""{channel.name.clone()}","# }
                 }
@@ -198,13 +228,21 @@ fn App() -> Element {
         }
         h3 { "chat" }
         MessageBox {
-            disabled: !is_connected,
+            disabled: !is_connected || channel.read().is_none(),
             onsend: move |message: String| {
                 if !is_connected {
                     println!("Can't send message, because not connected to server.");
                     return;
                 }
-                let packet = app.packet_builder().read().clone().chat_message(message);
+                if channel.read().is_none() {
+                    println!("Can't send message because no channel is selected");
+                    return;
+                }
+                let packet = app
+                    .packet_builder()
+                    .read()
+                    .clone()
+                    .chat_message(channel.read().cloned().unwrap().id, message);
                 add_message(Message::from_packet(&packet));
                 app.client().read().send(packet);
                 dioxus::core::needs_update();

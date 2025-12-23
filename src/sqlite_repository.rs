@@ -6,7 +6,7 @@ use std::{cell::RefCell, env, path::PathBuf};
 use uuid::Uuid;
 
 use crate::{
-    models::{ChannelModel, MessageModel},
+    models::{ChannelModel, MessageModel, UuidWrapper},
     repository::{Channel, Message, Repository},
 };
 
@@ -100,14 +100,14 @@ impl Repository for SqliteRepository {
     /// The count is limited to \[0, 50\] results.
     fn get_n_messages_before(
         &self,
-        _channel_id: Uuid,
+        channel_id: Uuid,
         from: chrono::DateTime<chrono::Utc>,
         count: usize,
     ) -> Vec<Message> {
         let mut conn = self.conn.borrow_mut();
         messages
             .filter(time.le(from))
-            // .filter(channel.eq(UuidWrapper(channel_id)))
+            .filter(channel.eq(UuidWrapper(channel_id)))
             .limit(clamp(count as i64, 0, 50))
             .select(MessageModel::as_select())
             .load(&mut conn as &mut SqliteConnection)
