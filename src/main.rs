@@ -26,6 +26,7 @@ use crate::{
     repository::{Message, Repository},
     tcp_chat_client::{PacketBuilder, PacketType},
 };
+mod schema;
 // mod sqlite_repository;
 mod poc_repo;
 use poc_repo::POCRepo;
