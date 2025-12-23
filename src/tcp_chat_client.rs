@@ -107,14 +107,14 @@ impl TcpChatClient {
                         known_channels = repo.lock().unwrap().get_channels_uuids();
                     }
 
-                    let _ = outgoing_tx.send(packet_builder.request_channels(known_channels, packet.sender));
+                    let _ = outgoing_tx.send(packet_builder.request_channels(known_channels, true, packet.sender));
                     println!("requesting their channels...");
                 } else {
                     println!();
                 }
                 
             },
-            PacketType::RequestChannels { known_channels } => {
+            PacketType::RequestChannels { known_channels, request_back } => {
                 let my_channels: Vec<Channel>;
                 {
                     let repo = repo.lock().unwrap();
@@ -129,6 +129,15 @@ impl TcpChatClient {
 
                 println!("sent {} channels to public", new_channels.len());
                 let _ = outgoing_tx.send(packet_builder.respond_channels(new_channels));
+
+                if request_back {
+                    let known_channels: Vec<Uuid>;
+                    {
+                        known_channels = repo.lock().unwrap().get_channels_uuids();
+                    }
+                    let _ = outgoing_tx.send(packet_builder.request_channels(known_channels, false, packet.sender));
+                }
+
                 return;
             },
             PacketType::RespondChannels { new_channels } => {

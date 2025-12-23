@@ -49,6 +49,7 @@ pub enum PacketType {
     },
     RequestChannels {
         known_channels: Vec<Uuid>,
+        request_back: bool,
     },
     RespondChannels {
         new_channels: Vec<Channel>,
@@ -145,10 +146,18 @@ impl PacketBuilder {
         out.payload = PacketType::KeepAlive;
         out
     }
-    pub fn request_channels(&self, known_channels: Vec<Uuid>, recipient: Uuid) -> Packet {
+    pub fn request_channels(
+        &self,
+        known_channels: Vec<Uuid>,
+        request_back: bool,
+        recipient: Uuid,
+    ) -> Packet {
         let mut out = self.base();
         out.recipient = Some(recipient);
-        out.payload = PacketType::RequestChannels { known_channels };
+        out.payload = PacketType::RequestChannels {
+            known_channels,
+            request_back,
+        };
         out
     }
     pub fn respond_channels(&self, new_channels: Vec<Channel>) -> Packet {
