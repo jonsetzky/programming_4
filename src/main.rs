@@ -118,6 +118,17 @@ fn App() -> Element {
                 oninput: move |event| { username.set(event.value()) },
             }
         }
+        div {
+            button {
+                onclick: move |_| {
+                    for channel in app.repo().read().lock().unwrap().get_channels() {
+                        println!("Channel {}'s id is {}", channel.name, channel.id);
+                    }
+                },
+                "print channels"
+            }
+        }
+        p {}
         MessageBox {
             disabled: !is_connected,
             onsend: move |message: String| {
