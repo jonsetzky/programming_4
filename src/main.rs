@@ -1,5 +1,6 @@
 extern crate directories;
 use std::{
+    fs,
     sync::{Arc, Mutex},
     time::{Duration, SystemTime},
 };
@@ -154,14 +155,15 @@ fn App() -> Element {
 }
 
 fn main() {
-    println!(
-        "Data directory: {}",
-        ProjectDirs::from("", "jonsetzky", "Neighbor Chat")
-            .unwrap()
-            .data_dir()
-            .to_str()
-            .unwrap()
-    );
+    if let Err(err) = fs::create_dir_all(neighbor_chat::data_dir()) {
+        panic!("error creating data directory {}", err);
+    } else {
+        println!(
+            "Data directory: {}",
+            neighbor_chat::data_dir().to_str().unwrap()
+        );
+    }
+
     use self::schema::messages::dsl::*;
     use diesel::prelude::*;
     let conn = &mut establish_connection();
