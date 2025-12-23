@@ -22,7 +22,10 @@ use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
 mod repository;
-use crate::repository::{Message, PacketBuilder, PacketType, Repository};
+use crate::{
+    repository::{Message, Repository},
+    tcp_chat_client::{PacketBuilder, PacketType},
+};
 // mod sqlite_repository;
 mod poc_repo;
 use poc_repo::POCRepo;

@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
 use dioxus_stores::Store;
-use serde_json::Value;
+use serde_json::{Value, json};
+use serde_tran::ErrorKind;
 use smol::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use smol::net::TcpStream;
 use std::collections::HashMap;
-use std::io::Error;
+use std::io::{Error};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -17,9 +18,6 @@ use uuid::Uuid;
 
 use crate::arc_mutex_signal::AMSignal;
 use crate::repository::Channel;
-use crate::repository::Packet;
-use crate::repository::PacketBuilder;
-use crate::repository::PacketType;
 use crate::repository::Repository;
 
 enum MessageType {
@@ -30,6 +28,148 @@ enum MessageType {
     // ChangeTopic = 3,
     // ListChannels = 4,
 }
+
+
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+pub enum PacketType {
+    None,
+    Hello {
+        channels_checksum: u32,
+        nickname: String,
+    },
+    KeepAlive,
+    Message {
+        channel: Uuid,
+        message: String,
+    },
+    RequestChannels {
+        known_channels: Vec<Uuid>,
+        request_back: bool,
+    },
+    RespondChannels {
+        new_channels: Vec<Channel>,
+    },
+}
+
+#[derive(Clone, serde::Serialize, Debug, PartialEq)]
+pub struct Packet {
+    pub id: Uuid,
+    pub reply_to: Option<Uuid>,
+    pub sender: Uuid,
+    pub recipient: Option<Uuid>,
+    pub time: DateTime<Utc>,
+    pub payload: PacketType,
+}
+
+impl Packet {
+    pub fn into_json(self) -> Result<Value, ErrorKind> {
+        let payload = match serde_tran::to_base64(&self.payload) {
+            Err(err) => {
+                println!("Failed to convert payload data to base64");
+                return Err(err);
+            }
+            Ok(result) => result,
+        };
+        let mut json = json!({
+            "type": 1,
+            "id": self.id,
+            "message": payload,
+            "user": self.sender,
+            "sent": self.time.timestamp(),
+        });
+
+        if self.recipient.is_some() {
+            json["directMessageTo"] = json!(self.recipient.unwrap().to_string());
+        }
+        Ok(json)
+    }
+}
+
+// todo add support for modifying user id?
+#[derive(Clone)]
+pub struct PacketBuilder {
+    /// ! DO NOT MODIFY THIS
+    user_id: Uuid,
+    nickname: Arc<Mutex<String>>,
+}
+
+impl PacketBuilder {
+    pub fn clone(&self) -> PacketBuilder {
+        PacketBuilder {
+            user_id: self.user_id.clone(),
+            nickname: self.nickname.clone(),
+        }
+    }
+
+    pub fn set_nickname(&self, new: &String) {
+        let mut nick = self.nickname.lock().unwrap();
+        *nick = new.to_string();
+    }
+}
+
+impl PacketBuilder {
+    pub fn new(user_id: Uuid, nickname: String) -> PacketBuilder {
+        PacketBuilder {
+            user_id,
+            nickname: Arc::new(Mutex::new(nickname)),
+        }
+    }
+
+    fn base(&self) -> Packet {
+        Packet {
+            id: Uuid::new_v4(),
+            // reply_to: Some(Uuid::new_v4()),
+            reply_to: None,
+            sender: self.user_id,
+            time: SystemTime::now().into(),
+            payload: PacketType::None,
+            recipient: None,
+        }
+    }
+
+    pub fn chat_message(&self, message: String) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::Message {
+            message,
+            channel: Uuid::new_v4(),
+        };
+        out
+    }
+    pub fn keepalive(&self) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::KeepAlive;
+        out
+    }
+    pub fn request_channels(
+        &self,
+        known_channels: Vec<Uuid>,
+        request_back: bool,
+        recipient: Uuid,
+    ) -> Packet {
+        let mut out = self.base();
+        out.recipient = Some(recipient);
+        out.payload = PacketType::RequestChannels {
+            known_channels,
+            request_back,
+        };
+        out
+    }
+    pub fn respond_channels(&self, new_channels: Vec<Channel>) -> Packet {
+        let mut out = self.base();
+        out.payload = PacketType::RespondChannels { new_channels };
+        out
+    }
+    pub fn hello(&self, channels_checksum: u32, recipient: Option<Uuid>) -> Packet {
+        let mut out = self.base();
+        out.recipient = recipient;
+        out.payload = PacketType::Hello {
+            channels_checksum,
+            nickname: self.nickname.lock().unwrap().clone(),
+        };
+        out
+    }
+}
+
 
 #[derive(Store)]
 pub struct TcpChatClient {
