@@ -3,6 +3,7 @@ use dioxus_stores::Store;
 use serde_json::Value;
 use smol::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use smol::net::TcpStream;
+use std::collections::HashMap;
 use std::io::Error;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -30,13 +31,6 @@ enum MessageType {
     // ListChannels = 4,
 }
 
-struct OtherClient {
-    id: Uuid,
-    #[allow(unused)]
-    channels_checksum: u32,
-    last_keepalive: SystemTime,
-}
-
 #[derive(Store)]
 pub struct TcpChatClient {
     is_probably_connected: AMSignal<bool>,
@@ -48,7 +42,7 @@ pub struct TcpChatClient {
     repo: Arc<Mutex<dyn Repository + Send  + 'static>>,
     packet_builder: PacketBuilder,
 
-    other_clients: Arc<Mutex<Vec<OtherClient>>>,
+    other_clients: Arc<Mutex<HashMap<Uuid, SystemTime>>>,
 }
 
 impl TcpChatClient {
@@ -66,7 +60,7 @@ impl TcpChatClient {
             repo: repo.clone(),
             packet_builder,
 
-            other_clients: Arc::new(Mutex::new(Vec::<OtherClient>::new())),
+            other_clients: Arc::new(Mutex::new(HashMap::<Uuid, SystemTime>::new())),
         }
     }
 
@@ -87,28 +81,19 @@ impl TcpChatClient {
         repo: Arc<Mutex<impl Repository + Send + 'static + ?Sized>>, 
         incoming_tx: Sender<Packet>, 
         outgoing_tx: Sender<Packet>, 
-        other_clients: Arc<Mutex<Vec<OtherClient>>>, 
+        other_clients: Arc<Mutex<HashMap<Uuid, SystemTime>>>, 
         packet: Packet) {
         match packet.payload {
             PacketType::KeepAlive => {
                 let mut ocs = other_clients.lock().unwrap();
-                for oc in ocs.as_mut_slice() {
-                    if oc.id == packet.sender {
-                        oc.last_keepalive = SystemTime::now();
-                        break;
-                    }
-                }
+                ocs.insert(packet.sender, SystemTime::now());
             },
             PacketType::Hello {channels_checksum, nickname } => {
                 print!("{} said hello! their channels are {}. ", nickname, channels_checksum);
 
                 {
                     let mut ocs = other_clients.lock().unwrap();
-                    ocs.push(OtherClient {
-                        id: packet.sender,
-                        channels_checksum,
-                        last_keepalive: SystemTime::now()
-                    })
+                    ocs.insert(packet.sender, SystemTime::now());
                 }
 
                 if packet.recipient.is_none() {
@@ -321,11 +306,18 @@ impl TcpChatClient {
                 // remove stale clients
                 let now = SystemTime::now();
                 let mut ocs = other_clients.lock().unwrap();
-                let mut i = 0usize;
-                while let Some(pos) = ocs[i..].iter().position(|oc| oc.last_keepalive + Duration::from_mins(1) <= now) {
-                    ocs.remove(pos);
-                    i = pos;
-                }
+                ocs
+                    .iter()
+                    .filter_map(|(uuid, last_keepalive)| {
+                        if *last_keepalive + Duration::from_mins(1) <= now {
+                            return Some(uuid.clone())
+                        }
+                        return None
+                    }).collect::<Vec<Uuid>>()
+                    .iter()
+                    .for_each(|uuid| {
+                        ocs.remove(&uuid);
+                    });
             }
         });
 
