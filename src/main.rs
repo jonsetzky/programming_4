@@ -5,8 +5,6 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use directories::ProjectDirs;
-
 use dioxus::prelude::*;
 use dioxus_desktop::{Config, LogicalSize, WindowBuilder};
 
@@ -33,7 +31,6 @@ mod models;
 mod poc_repo;
 mod schema;
 mod sqlite_repository;
-use poc_repo::POCRepo;
 
 #[derive(Store)]
 struct AppState {

@@ -6,7 +6,7 @@ use std::{cell::RefCell, env, path::PathBuf};
 use uuid::Uuid;
 
 use crate::{
-    models::{ChannelModel, MessageModel, UuidWrapper},
+    models::{ChannelModel, MessageModel},
     repository::{Channel, Message, Repository},
 };
 
@@ -49,9 +49,13 @@ impl Repository for SqliteRepository {
         let mut conn = self.conn.borrow_mut();
         let chls: Vec<ChannelModel> = chls.into_iter().map(ChannelModel::from).collect();
 
-        let _ = diesel::insert_into(channels)
+        match diesel::insert_into(channels)
             .values(&chls)
-            .execute(&mut conn as &mut SqliteConnection);
+            .execute(&mut conn as &mut SqliteConnection)
+        {
+            Ok(_) => println!("successfully added channel"),
+            Err(err) => println!("failed to add channel {}", err),
+        };
     }
     fn get_channels(&self) -> Vec<Channel> {
         let mut conn = self.conn.borrow_mut();
@@ -81,7 +85,7 @@ impl Repository for SqliteRepository {
             .execute(&mut conn as &mut SqliteConnection)
         {
             Ok(_) => println!("successfully added message"),
-            Err(err) => println!("failed to add message"),
+            Err(err) => println!("failed to add message {}", err),
         };
     }
     #[allow(unused_variables)]
@@ -96,7 +100,7 @@ impl Repository for SqliteRepository {
     /// The count is limited to \[0, 50\] results.
     fn get_n_messages_before(
         &self,
-        channel_id: Uuid,
+        _channel_id: Uuid,
         from: chrono::DateTime<chrono::Utc>,
         count: usize,
     ) -> Vec<Message> {
