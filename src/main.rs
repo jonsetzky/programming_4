@@ -23,13 +23,15 @@ use uuid::Uuid;
 
 mod repository;
 use crate::{
+    models::Message as MessageModel,
     repository::{Message, Repository},
+    sqlite_repository::{establish_connection, run_migrations},
     tcp_chat_client::{PacketBuilder, PacketType},
 };
 mod models;
-mod schema;
-// mod sqlite_repository;
 mod poc_repo;
+mod schema;
+mod sqlite_repository;
 use poc_repo::POCRepo;
 
 #[derive(Store)]
@@ -160,6 +162,16 @@ fn main() {
             .to_str()
             .unwrap()
     );
+    use self::schema::messages::dsl::*;
+    use diesel::prelude::*;
+    let conn = &mut establish_connection();
+    run_migrations(conn);
+
+    let res = messages
+        .select(MessageModel::as_select())
+        .load(conn)
+        .expect("err selecting messages");
+    println!("Found {} messages", res.len());
 
     dioxus::LaunchBuilder::new()
         .with_cfg(desktop! {

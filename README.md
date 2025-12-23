@@ -45,11 +45,14 @@ cargo run
 
 ## Commands for common tasks
 
-| Task                    | Command                                  |
-| ----------------------- | ---------------------------------------- |
-| Running dev environment | `dx serve`                               |
-| Running linter          | `cargo clippy`                           |
-| Updating database       | https://diesel.rs/guides/getting-started |
+| Task                    | Command                                                    |
+| ----------------------- | ---------------------------------------------------------- |
+| Running dev environment | `dx serve`                                                 |
+| Running linter          | `cargo clippy`                                             |
+| Updating database       | https://diesel.rs/guides/getting-started                   |
+| Running db migration    | `diesel migration generate --diff-schema <migration-name>` |
+
+`
 
 # Peer-to-peer architecture
 
