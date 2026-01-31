@@ -1,12 +1,12 @@
 use dioxus::prelude::*;
 
-use crate::repository::Message;
+use crate::packet::ChatMessage;
 
 #[component]
-pub fn MessageHistory(messages: Signal<Vec<Message>>) -> Element {
+pub fn MessageHistory(messages: Signal<Vec<ChatMessage>>) -> Element {
     rsx! {
         for message in messages.iter() {
-            p { "{message.sender}: {message.message}" }
+            p { "{message.user}: {message.message}" }
         }
     }
 }
