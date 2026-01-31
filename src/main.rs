@@ -16,6 +16,7 @@ mod arc_mutex_signal;
 mod packet;
 mod packet_builder;
 mod tcp_chat_client;
+
 use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
