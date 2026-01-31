@@ -17,28 +17,20 @@ mod packet;
 mod packet_builder;
 mod tcp_chat_client;
 
+mod route;
+
 use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
 use crate::{
     packet::{ChatMessage, Packet},
     packet_builder::PacketBuilder,
+    route::Route,
 };
 
 #[derive(Store)]
 struct AppState {
     packet_builder: PacketBuilder,
-}
-
-#[derive(Clone, Debug, PartialEq, Routable)]
-enum Route {
-    #[route("/")]
-    Login,
-    // #[route("/home")]
-    // Home,
-
-    // #[route("/user/:id")]
-    // User { id: u32 },
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");

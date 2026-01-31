@@ -1,9 +1,13 @@
 use dioxus::{html::h1, prelude::*};
 
-use crate::components::InputField;
+use crate::{
+    components::{Button, InputField},
+    route::Route,
+};
 
 #[component]
 pub fn Login() -> Element {
+    let nav = navigator();
     let name: Signal<String> = use_signal(|| String::from(""));
 
     rsx! {
@@ -20,6 +24,9 @@ pub fn Login() -> Element {
                 h1 { font_size: "48px", font_weight: "900", "Welcome" }
                 form {
                     display: "flex",
+                    flex_direction: "column",
+                    padding_top: "3rem",
+                    gap: "1rem",
                     align_items: "center",
                     justify_content: "center",
                     InputField {
@@ -27,6 +34,12 @@ pub fn Login() -> Element {
                         placeholder: "Firstname Lastname",
                         legal_regex: r"^[a-öA-Ö][a-öA-Ö\s]*$",
                         value: name,
+                    }
+                    Button {
+                        label: "Continue",
+                        onclick: move |_| {
+                            nav.replace(Route::Home);
+                        },
                     }
                 }
             }

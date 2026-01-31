@@ -9,20 +9,6 @@ pub fn InputField(
     value: Signal<String>,
     legal_regex: Option<String>,
 ) -> Element {
-    let css = r#"
-        width: 100%;
-        height: 2.3rem;
-        border: none;
-        padding-left: 8px;
-        padding-right: 8px;
-        outline: none;
-        background-color: #1D1D1D;
-        font-size: 16px;
-        font-weight: 400;
-        font-family: Inter;
-        border-radius: 6px;
-        "#;
-
     let re = use_hook(|| match legal_regex {
         Some(regex) => Some(Regex::new(regex.as_str()).expect("failed to build regex")),
         None => None,
@@ -40,7 +26,6 @@ pub fn InputField(
                 p { text_align: "left", font_size: "12px", width: "100%", "{l}" }
             }
             input {
-                style: css,
                 r#type: "text",
                 oninput: move |event| {
                     let newVal = event.value();
