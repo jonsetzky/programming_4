@@ -1,0 +1,7 @@
+input {
+  color: #ffffff;
+}
+
+input::placeholder {
+  color: #727272;
+}

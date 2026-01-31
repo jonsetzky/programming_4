@@ -42,12 +42,14 @@ enum Route {
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");
+static MAIN_CSS: Asset = asset!("/assets/main.css");
 
 // todo use embedded font?
 #[component]
 fn App() -> Element {
     rsx! {
         document::Stylesheet { href: RESET_CSS }
+        document::Stylesheet { href: MAIN_CSS }
         document::Stylesheet { href: "https://fonts.googleapis.com/css?family=Inter" }
         div {
             background_color: "#171717",

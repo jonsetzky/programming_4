@@ -23,6 +23,7 @@ libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 dotenvy = "0.15.7"
 diesel_migrations = "2.3.1"
 regex = "1.12.2"
+dioxus-logger = "0.7.3"
 
 [features]
 default = ["desktop"]
