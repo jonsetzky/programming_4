@@ -1,6 +1,8 @@
 * {
   /* make everything unselectable by default */
   user-select: none;
+  font-family: Inter;
+  color: #fff;
 }
 
 input {
@@ -14,7 +16,6 @@ input {
   background-color: #1d1d1d;
   font-size: 16px;
   font-weight: 400;
-  font-family: Inter;
   border-radius: 6px;
 }
 
@@ -38,7 +39,6 @@ button {
   outline: none;
   font-size: 16px;
   font-weight: 400;
-  font-family: Inter;
   border-radius: 6px;
   color: #fff;
   user-select: none;
@@ -118,4 +118,48 @@ button.user-button:hover {
 }
 button.user-button:active {
   background-color: #191919;
+}
+
+.notification {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  width: 36rem;
+  height: 3.3rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background-color: #7b2323;
+  border-radius: 0px 0px 6px 6px;
+  font-family: Inter;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.notification.hide {
+  animation: slideUp 0.3s ease-in forwards;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
 }

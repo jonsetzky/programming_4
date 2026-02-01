@@ -12,6 +12,7 @@ pub fn Login() -> Element {
     let nav = navigator();
     let name: Signal<String> = use_signal(|| state.username.to_string());
     let address: Signal<String> = use_signal(|| state.address.to_string());
+    use_effect(move || state.connection_notification.set("".into()));
 
     rsx! {
         div {

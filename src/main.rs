@@ -28,6 +28,7 @@ struct AppState {
     packet_builder: PacketBuilder,
     username: Signal<String>,
     address: Signal<String>,
+    connection_notification: Signal<String>,
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");
@@ -44,6 +45,7 @@ fn App() -> Element {
             packet_builder,
             username: Signal::new(username),
             address: Signal::new(String::from("127.0.0.1:10000")),
+            connection_notification: Signal::new(String::from("")),
         };
     });
 
@@ -51,6 +53,7 @@ fn App() -> Element {
         document::Stylesheet { href: RESET_CSS }
         document::Stylesheet { href: MAIN_CSS }
         document::Stylesheet { href: "https://fonts.googleapis.com/css?family=Inter" }
+        Notification {}
         div {
             background_color: "#171717",
             color: "#EEEEEE",

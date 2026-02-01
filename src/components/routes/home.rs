@@ -1,9 +1,15 @@
 use std::{io, time::Duration};
 
 use dioxus::{html::h1, prelude::*};
+use dioxus_primitives::{ContentAlign, ContentSide};
 use tokio::select;
 
-use crate::{AppState, components::Button, route::Route, tcp_chat_client::TcpChatClient};
+use crate::{
+    AppState,
+    components::{Button, tooltip::Tooltip, tooltip::TooltipContent, tooltip::TooltipTrigger},
+    route::Route,
+    tcp_chat_client::TcpChatClient,
+};
 
 async fn read_loop(mut client: TcpChatClient) {
     loop {
@@ -28,19 +34,27 @@ async fn read_loop(mut client: TcpChatClient) {
 pub fn Home() -> Element {
     let nav = navigator();
     let state = use_context::<AppState>();
+    let mut connection_notification = state.connection_notification;
+    let mut connected = use_signal(|| false);
 
     use_future(move || async move {
         loop {
-            let client =
-                match TcpChatClient::connect(Some(state.address.to_string().as_str())).await {
-                    Ok(client) => client,
-                    Err(err) => {
-                        // todo actual error handling
-                        println!("error connecting. attempting again in 5 seconds");
-                        tokio::time::sleep(Duration::from_secs(5)).await;
-                        continue;
-                    }
-                };
+            connected.set(false);
+            let client = match TcpChatClient::connect(Some(state.address.to_string().as_str()))
+                .await
+            {
+                Ok(client) => client,
+                Err(err) => {
+                    connection_notification.set(String::from("Error connecting to the server."));
+                    // println!("error connecting. attempting again in 5 seconds");
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                    connected.set(false);
+                    continue;
+                }
+            };
+
+            connected.set(true);
+            connection_notification.set(String::from(""));
 
             let _read_handle = tokio::spawn(async move {
                 read_loop(client.clone()).await;
@@ -85,6 +99,7 @@ pub fn Home() -> Element {
                 width: "20rem",
                 background_color: "#262626",
                 flex_shrink: "0",
+                // align_items: "center",
                 gap: "4px",
                 h2 {
                     onclick: move |_| {
@@ -94,17 +109,56 @@ pub fn Home() -> Element {
                     padding_top: "1.2rem",
                     "Your Neighborhoods"
                 }
-                hr {}
+                hr { align_self: "center" }
                 Button { class: "neighborhood-button", label: "Kauppakatu 213" }
                 Button {
                     class: "neighborhood-button",
                     label: "Naapurusto, jolla on aivan liian pitkä nimi, mikä ei meinaa loppua koskaan",
                 }
-                hr {}
+                hr { align_self: "center" }
                 Button { class: "add-neighborhood-button", label: "+ Add" }
                 div { flex: "1" }
-                hr {}
-                Button { class: "user-button", label: state.username }
+                hr { align_self: "center" }
+                div {
+                    display: "flex",
+                    flex_direction: "row",
+                    align_items: "center",
+                    justify_items: "start",
+                    Button { class: "user-button", label: state.username }
+                    Tooltip { height: "100%",
+                        TooltipTrigger { height: "100%",
+                            div {
+                                display: "flex",
+                                align_items: "center",
+                                height: "100%",
+                                div {
+                                    width: "6px",
+                                    height: "6px",
+                                    background_color: if connected() { "green" } else { "red" },
+                                    border_radius: "50%",
+                                    margin_left: "4px", // Add some space between the button and the circle
+                                    margin_right: "1.5rem",
+                                    align_self: "center",
+                                }
+                            }
+                        }
+                        TooltipContent {
+                            // The side of the TooltipTrigger where the content will be displayed. Can be one of Top, Right, Bottom, or Left.
+                            side: ContentSide::Right,
+                            // The alignment of the TooltipContent relative to the TooltipTrigger. Can be one of Start, Center, or End.
+                            align: ContentAlign::Center,
+                            style: "background-color: #000;color: #fff",
+                            // The content of the tooltip, which can include text, images, or any other elements.
+                            p { style: "margin: 0;",
+                                if connected() {
+                                    "Online"
+                                } else {
+                                    "Offline"
+                                }
+                            }
+                        }
+                    }
+                }
             }
             div {
                 display: "flex",

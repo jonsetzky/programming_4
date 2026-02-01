@@ -25,6 +25,7 @@ diesel_migrations = "2.3.1"
 regex = "1.12.2"
 dioxus-logger = "0.7.3"
 serde_with = "3.16.1"
+dioxus-primitives = { git = "https://github.com/DioxusLabs/components", version = "0.0.1", default-features = false }
 
 [features]
 default = ["desktop"]
