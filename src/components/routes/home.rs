@@ -1,11 +1,55 @@
+use std::{io, time::Duration};
+
 use dioxus::{html::h1, prelude::*};
+use tokio::select;
 
-use crate::{AppState, components::Button, route::Route};
+use crate::{AppState, components::Button, route::Route, tcp_chat_client::TcpChatClient};
 
+async fn read_loop(mut client: TcpChatClient) {
+    loop {
+        let packet = match client.recv().await {
+            Err(err) => {
+                if err.kind() == io::ErrorKind::ConnectionAborted {
+                    break;
+                } else {
+                    println!("unknown error while attempting to recv()");
+                    break;
+                }
+            }
+            Ok(packet) => packet,
+        };
+        println!(
+            "got packet {}",
+            String::from_utf8(packet.into_bytes()).unwrap()
+        );
+    }
+}
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
     let state = use_context::<AppState>();
+
+    use_future(move || async move {
+        loop {
+            let client =
+                match TcpChatClient::connect(Some(state.address.to_string().as_str())).await {
+                    Ok(client) => client,
+                    Err(err) => {
+                        // todo actual error handling
+                        println!("error connecting. attempting again in 5 seconds");
+                        tokio::time::sleep(Duration::from_secs(5)).await;
+                        continue;
+                    }
+                };
+
+            let _read_handle = tokio::spawn(async move {
+                read_loop(client.clone()).await;
+            });
+
+            let _ = _read_handle.await;
+        }
+    });
+
     rsx! {
         // p {
         //     onclick: move |_| {

@@ -26,6 +26,13 @@ pub struct TcpChatClient {
 }
 
 impl TcpChatClient {
+    pub fn clone(&self) -> TcpChatClient {
+        TcpChatClient {
+            stream: self.stream.clone(),
+            reader: BufReader::new(self.stream.clone()),
+        }
+    }
+
     pub async fn connect(addr: Option<&str>) -> io::Result<TcpChatClient> {
         let addr = addr.unwrap_or("127.0.0.1:10000");
 
