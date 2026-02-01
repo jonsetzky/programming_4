@@ -1,10 +1,11 @@
 use dioxus::{html::h1, prelude::*};
 
-use crate::{components::Button, route::Route};
+use crate::{AppState, components::Button, route::Route};
 
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
+    let state = use_context::<AppState>();
     rsx! {
         // p {
         //     onclick: move |_| {
@@ -59,7 +60,7 @@ pub fn Home() -> Element {
                 Button { class: "add-neighborhood-button", label: "+ Add" }
                 div { flex: "1" }
                 hr {}
-                Button { class: "user-button", label: "username" }
+                Button { class: "user-button", label: state.username }
             }
             div {
                 display: "flex",

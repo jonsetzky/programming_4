@@ -1,14 +1,16 @@
 use dioxus::{html::h1, prelude::*};
 
 use crate::{
+    AppState,
     components::{Button, InputField},
     route::Route,
 };
 
 #[component]
 pub fn Login() -> Element {
+    let mut state = use_context::<AppState>();
     let nav = navigator();
-    let name: Signal<String> = use_signal(|| String::from(""));
+    let name: Signal<String> = use_signal(|| state.username.to_string());
 
     rsx! {
         div {
@@ -38,7 +40,12 @@ pub fn Login() -> Element {
                     Button {
                         label: "Continue",
                         onclick: move |_| {
-                            nav.replace(Route::Home);
+                            let name = name().trim().to_string();
+                            if name.len() >= 3 {
+                                state.packet_builder.set_nickname(&name);
+                                state.username.set(name);
+                                nav.replace(Route::Home);
+                            }
                         },
                     }
                 }

@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::packet::{ChatMessage, Packet};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct PacketBuilder {
     nickname: Arc<Mutex<String>>,
 }

@@ -23,14 +23,15 @@ use tcp_chat_client::TcpChatClient;
 use uuid::Uuid;
 
 use crate::{
+    components::routes::Login,
     packet::{ChatMessage, Packet},
     packet_builder::PacketBuilder,
     route::Route,
 };
-
-#[derive(Store)]
+#[derive(Debug, Store, Clone)]
 struct AppState {
     packet_builder: PacketBuilder,
+    username: Signal<String>,
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");
@@ -39,6 +40,16 @@ static MAIN_CSS: Asset = asset!("/assets/main.css");
 // todo use embedded font?
 #[component]
 fn App() -> Element {
+    use_context_provider(|| {
+        let username = String::from("");
+        // todo use actual user id
+        let packet_builder = PacketBuilder::new(username.clone());
+        return AppState {
+            packet_builder,
+            username: Signal::new(username),
+        };
+    });
+
     rsx! {
         document::Stylesheet { href: RESET_CSS }
         document::Stylesheet { href: MAIN_CSS }
