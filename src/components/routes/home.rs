@@ -1,6 +1,6 @@
 use dioxus::{html::h1, prelude::*};
 
-use crate::route::Route;
+use crate::{components::Button, route::Route};
 
 #[component]
 pub fn Home() -> Element {
@@ -34,14 +34,32 @@ pub fn Home() -> Element {
             height: "100vh",
             justify_items: "start",
             div {
+                display: "flex",
+                flex_direction: "column",
                 height: "100vh",
                 width: "20rem",
                 background_color: "#262626",
                 flex_shrink: "0",
-                onclick: move |_| {
-                    nav.replace(Route::Login);
-                },
-                "Your Neighborhoods"
+                gap: "4px",
+                h2 {
+                    onclick: move |_| {
+                        nav.replace(Route::Login);
+                    },
+                    padding: "1rem",
+                    padding_top: "1.2rem",
+                    "Your Neighborhoods"
+                }
+                hr {}
+                Button { class: "neighborhood-button", label: "Kauppakatu 213" }
+                Button {
+                    class: "neighborhood-button",
+                    label: "Naapurusto, jolla on aivan liian pitkä nimi, mikä ei meinaa loppua koskaan",
+                }
+                hr {}
+                Button { class: "add-neighborhood-button", label: "+ Add" }
+                div { flex: "1" }
+                hr {}
+                Button { class: "user-button", label: "username" }
             }
             div {
                 display: "flex",
@@ -56,12 +74,7 @@ pub fn Home() -> Element {
                     margin_left: "auto",
                     margin_right: "auto",
                     width: "14rem",
-                    h1 {
-                        font_size: "32px",
-                        font_weight: "900",
-                        color: "#606060",
-                        "Get Started"
-                    }
+                    h1 { font_size: "32px", color: "#606060", "Get Started" }
                     p {
                         font_size: "16px",
                         font_weight: "900",
