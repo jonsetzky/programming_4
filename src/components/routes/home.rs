@@ -2,11 +2,17 @@ use std::{io, time::Duration};
 
 use dioxus::{html::h1, prelude::*};
 use dioxus_primitives::{ContentAlign, ContentSide};
-use tokio::select;
+use neighbor_chat::packet_builder::PacketBuilder;
+use regex::Regex;
+use tokio::{select, sync::oneshot};
 
 use crate::{
     AppState,
-    components::{Button, tooltip::Tooltip, tooltip::TooltipContent, tooltip::TooltipTrigger},
+    components::{
+        Button,
+        tooltip::{Tooltip, TooltipContent, TooltipTrigger},
+    },
+    packet::Packet,
     route::Route,
     tcp_chat_client::TcpChatClient,
 };
@@ -28,14 +34,26 @@ async fn read_loop(mut client: TcpChatClient) {
             "got packet {}",
             String::from_utf8(packet.into_bytes()).unwrap()
         );
+
+        match packet {
+            Packet::ListChannels { channels } => {
+                let Some(channels) = channels else {
+                    continue;
+                };
+                consume_context::<AppState>().channels.set(channels);
+            }
+            _ => println!("unhandled packet type"),
+        }
     }
 }
+
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
     let state = use_context::<AppState>();
     let mut connection_notification = state.connection_notification;
     let mut connected = use_signal(|| false);
+    let channels = state.channels;
 
     use_future(move || async move {
         loop {
@@ -56,11 +74,16 @@ pub fn Home() -> Element {
             connected.set(true);
             connection_notification.set(String::from(""));
 
-            let _read_handle = tokio::spawn(async move {
-                read_loop(client.clone()).await;
+            let (tx, rx) = oneshot::channel::<()>();
+            let _client = client.clone();
+            let _read_handle = spawn(async move {
+                read_loop(_client).await;
+                let _ = tx.send(()); // notify when read loop exits
             });
 
-            let _ = _read_handle.await;
+            let _ = client.send(Packet::ListChannels { channels: None }).await;
+
+            let _ = rx.await;
         }
     });
 
@@ -110,10 +133,17 @@ pub fn Home() -> Element {
                     "Your Neighborhoods"
                 }
                 hr { align_self: "center" }
-                Button { class: "neighborhood-button", label: "Kauppakatu 213" }
-                Button {
-                    class: "neighborhood-button",
-                    label: "Naapurusto, jolla on aivan liian pitkä nimi, mikä ei meinaa loppua koskaan",
+                for chl in channels() {
+                    Button {
+                        class: "neighborhood-button",
+                        label: chl.clone(),
+                        onclick: move |evt| {
+                            let chl = chl.clone();
+                            let split = chl.split(" ").collect::<Vec<&str>>();
+                            let chl_name = split[..split.len() - 1].join(" ");
+                            println!("{}", chl_name);
+                        },
+                    }
                 }
                 hr { align_self: "center" }
                 Button { class: "add-neighborhood-button", label: "+ Add" }

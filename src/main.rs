@@ -29,6 +29,7 @@ struct AppState {
     username: Signal<String>,
     address: Signal<String>,
     connection_notification: Signal<String>,
+    channels: Signal<Vec<String>>,
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");
@@ -46,6 +47,7 @@ fn App() -> Element {
             username: Signal::new(username),
             address: Signal::new(String::from("127.0.0.1:10000")),
             connection_notification: Signal::new(String::from("")),
+            channels: Signal::new(vec![]),
         };
     });
 
