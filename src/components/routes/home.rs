@@ -6,12 +6,12 @@ use crate::route::Route;
 pub fn Home() -> Element {
     let nav = navigator();
     rsx! {
-        p {
-            onclick: move |_| {
-                nav.replace(Route::Login);
-            },
-            "home"
-        }
+        // p {
+        //     onclick: move |_| {
+        //         nav.replace(Route::Login);
+        //     },
+        //     "home"
+        // }
         svg {
             width: "360",
             height: "198",
@@ -25,6 +25,50 @@ pub fn Home() -> Element {
                 stroke: "#404040",
                 stroke_width: "2",
                 stroke_linecap: "round",
+            }
+        }
+        div {
+            display: "flex",
+            flex_direction: "row",
+            width: "100vw",
+            height: "100vh",
+            justify_items: "start",
+            div {
+                height: "100vh",
+                width: "20rem",
+                background_color: "#262626",
+                flex_shrink: "0",
+                onclick: move |_| {
+                    nav.replace(Route::Login);
+                },
+                "Your Neighborhoods"
+            }
+            div {
+                display: "flex",
+                width: "100%",
+                height: "100%",
+                flex_grow: "0",
+                justify_items: "center",
+                align_items: "center",
+                div {
+                    display: "flex",
+                    flex_direction: "column",
+                    margin_left: "auto",
+                    margin_right: "auto",
+                    width: "14rem",
+                    h1 {
+                        font_size: "32px",
+                        font_weight: "900",
+                        color: "#606060",
+                        "Get Started"
+                    }
+                    p {
+                        font_size: "16px",
+                        font_weight: "900",
+                        color: "#404040",
+                        "by selecting a neighborhood on the left"
+                    }
+                }
             }
         }
     }
