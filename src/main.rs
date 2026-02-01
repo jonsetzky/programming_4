@@ -32,6 +32,7 @@ use crate::{
 struct AppState {
     packet_builder: PacketBuilder,
     username: Signal<String>,
+    address: Signal<String>,
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");
@@ -47,6 +48,7 @@ fn App() -> Element {
         return AppState {
             packet_builder,
             username: Signal::new(username),
+            address: Signal::new(String::from("127.0.0.1:10000")),
         };
     });
 

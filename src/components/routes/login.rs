@@ -11,6 +11,7 @@ pub fn Login() -> Element {
     let mut state = use_context::<AppState>();
     let nav = navigator();
     let name: Signal<String> = use_signal(|| state.username.to_string());
+    let address: Signal<String> = use_signal(|| state.address.to_string());
 
     rsx! {
         div {
@@ -37,6 +38,12 @@ pub fn Login() -> Element {
                         legal_regex: r"^[a-öA-Ö][a-öA-Ö\s]*$",
                         value: name,
                     }
+                    InputField {
+                        label: "Server Address",
+                        placeholder: "127.0.0.1:10000",
+                        value: address,
+                    }
+
                     Button {
                         label: "Continue",
                         onclick: move |_| {
@@ -44,6 +51,7 @@ pub fn Login() -> Element {
                             if name.len() >= 3 {
                                 state.packet_builder.set_nickname(&name);
                                 state.username.set(name);
+                                state.address.set(address());
                                 nav.replace(Route::Home);
                             }
                         },
