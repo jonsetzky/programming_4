@@ -3,15 +3,18 @@ use std::str::FromStr;
 
 use dioxus_desktop::wry::cookie::time::UtcDateTime;
 use serde_json::{Value, json};
+use serde_with::serde_as;
 use uuid::Uuid;
 
 #[allow(non_snake_case)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ChatMessage {
     pub id: Uuid,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub inReplyTo: Option<Uuid>,
     pub message: String,
     pub user: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub directMessageTo: Option<String>,
     pub sent: i64,
 }
@@ -26,13 +29,27 @@ impl ChatMessage {
 #[allow(non_snake_case)]
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
+#[serde_as]
 pub enum Packet {
-    Error { error: String, clientshutdown: bool },
-    Status { status: String },
+    Error {
+        error: String,
+        #[serde_as(as = "BoolFromInt")]
+        clientshutdown: bool,
+    },
+    Status {
+        status: String,
+    },
     Chat(ChatMessage),
-    JoinChannel { channel: String },
-    ChangeTopic { topic: String },
-    ListChannels,
+    JoinChannel {
+        channel: String,
+    },
+    ChangeTopic {
+        topic: String,
+    },
+    ListChannels {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        channels: Option<Vec<String>>,
+    },
 }
 
 impl Packet {
@@ -84,7 +101,13 @@ impl Packet {
             3 => Packet::ChangeTopic {
                 topic: val["topic"].as_str().unwrap().into(),
             },
-            4 => Packet::ListChannels,
+            4 => Packet::ListChannels {
+                channels: val["channels"].as_array().map(|arr| {
+                    arr.iter()
+                        .map(|v| v.as_str().unwrap().to_string())
+                        .collect()
+                }),
+            },
             _ => panic!("unknown Packet type {t}"),
         }
     }

@@ -49,7 +49,7 @@ impl PacketBuilder {
         })
     }
     pub fn list_channels(&self) -> Packet {
-        Packet::ListChannels
+        Packet::ListChannels { channels: None }
     }
     pub fn join_channel(&self, channel: String) -> Packet {
         Packet::JoinChannel { channel }
