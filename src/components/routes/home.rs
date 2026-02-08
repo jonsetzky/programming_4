@@ -7,6 +7,7 @@ use neighbor_chat::packet_builder::PacketBuilder;
 use regex::Regex;
 use tokio::{select, sync::oneshot};
 
+// idea from https://stackoverflow.com/questions/59170011/why-the-result-of-regexnew-cannot-be-assigned-to-a-constant
 lazy_static! {
     pub static ref JOIN_CHANNEL_STATUS_REGEX: Regex =
         Regex::new(r"^You joined the channel\s+(.+)$").unwrap();
