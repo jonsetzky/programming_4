@@ -52,6 +52,20 @@ button:active {
   background-color: #191919;
 }
 
+button.neighborhood-button-current {
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  border-radius: 0px;
+  background-color: #161616;
+  color: #fff;
+}
+button.neighborhood-button-current:hover {
+  background-color: #363636;
+}
+button.neighborhood-button-current:active {
+  background-color: #191919;
+}
 button.neighborhood-button {
   font-size: 14px;
   width: 100%;

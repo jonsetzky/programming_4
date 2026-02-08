@@ -2,9 +2,15 @@ use std::{io, time::Duration};
 
 use dioxus::{html::h1, prelude::*};
 use dioxus_primitives::{ContentAlign, ContentSide};
+use lazy_static::lazy_static;
 use neighbor_chat::packet_builder::PacketBuilder;
 use regex::Regex;
 use tokio::{select, sync::oneshot};
+
+lazy_static! {
+    pub static ref JOIN_CHANNEL_STATUS_REGEX: Regex =
+        Regex::new(r"^You joined the channel\s+(.+)$").unwrap();
+}
 
 use crate::{
     AppState,
@@ -17,7 +23,7 @@ use crate::{
     tcp_chat_client::TcpChatClient,
 };
 
-async fn read_loop(mut client: TcpChatClient) {
+async fn read_loop(mut client: TcpChatClient, mut active_channel: Signal<String>) {
     loop {
         let packet = match client.recv().await {
             Err(err) => {
@@ -42,9 +48,37 @@ async fn read_loop(mut client: TcpChatClient) {
                 };
                 consume_context::<AppState>().channels.set(channels);
             }
+            Packet::ChangeTopic { topic } => {
+                //todo handle
+            }
+            Packet::Chat(message) => {
+                // todo handle
+            }
+            Packet::Error {
+                error,
+                clientshutdown,
+            } => {
+                println!("got error packet!: {}", error);
+            }
+            Packet::Status { status } => {
+                println!("STATUS: {}", status);
+
+                if let Some(caps) = JOIN_CHANNEL_STATUS_REGEX.captures(status.as_str()) {
+                    let channel_name = &caps[1];
+                    active_channel.set(channel_name.into());
+                }
+            }
+            Packet::JoinChannel { channel } => {
+                // todo handle
+            }
             _ => println!("unhandled packet type"),
         }
     }
+}
+
+pub fn get_channel_name(name_with_user_count: String) -> String {
+    let split = name_with_user_count.split(" ").collect::<Vec<&str>>();
+    split[..split.len() - 1].join(" ")
 }
 
 #[component]
@@ -53,7 +87,11 @@ pub fn Home() -> Element {
     let state = use_context::<AppState>();
     let mut connection_notification = state.connection_notification;
     let mut connected = use_signal(|| false);
+    let mut packet_sender = state.packet_sender;
+
     let channels = state.channels;
+    let active_channel = use_signal(|| String::from("main"));
+    // let packet_builder = state.packet_builder.clone();
 
     use_future(move || async move {
         loop {
@@ -74,16 +112,47 @@ pub fn Home() -> Element {
             connected.set(true);
             connection_notification.set(String::from(""));
 
+            let (sendTx, mut sendRx) = tokio::sync::mpsc::channel::<Packet>(100);
+            packet_sender.set(Some(sendTx));
+
             let (tx, rx) = oneshot::channel::<()>();
             let _client = client.clone();
             let _read_handle = spawn(async move {
-                read_loop(_client).await;
+                read_loop(_client, active_channel).await;
                 let _ = tx.send(()); // notify when read loop exits
+            });
+
+            let _client = client.clone();
+            let _write_handle = spawn(async move {
+                println!("starting write loop");
+                loop {
+                    let Some(packet) = sendRx.recv().await else {
+                        break;
+                    };
+                    println!(
+                        "sent packet {}",
+                        String::from_utf8(packet.into_bytes()).unwrap()
+                    );
+
+                    match _client.send(packet).await {
+                        Err(err) => {
+                            if err.kind() == io::ErrorKind::ConnectionAborted {
+                                break;
+                            } else {
+                                println!("unknown error while attempting to send()");
+                                break;
+                            }
+                        }
+                        Ok(packet) => packet,
+                    };
+                }
+                println!("write loop exited")
             });
 
             let _ = client.send(Packet::ListChannels { channels: None }).await;
 
             let _ = rx.await;
+            _write_handle.cancel();
         }
     });
 
@@ -135,13 +204,30 @@ pub fn Home() -> Element {
                 hr { align_self: "center" }
                 for chl in channels() {
                     Button {
-                        class: "neighborhood-button",
-                        label: chl.clone(),
-                        onclick: move |evt| {
+                        class: if get_channel_name(chl.clone()) == active_channel() { "neighborhood-button-current" } else { "neighborhood-button" },
+                        label: get_channel_name(chl.clone()),
+                        onclick: move |_evt| {
                             let chl = chl.clone();
-                            let split = chl.split(" ").collect::<Vec<&str>>();
-                            let chl_name = split[..split.len() - 1].join(" ");
-                            println!("{}", chl_name);
+                            spawn(async move {
+                                let chl_name = get_channel_name(chl);
+                                println!("{}", chl_name);
+
+                                // todo handle errors?
+                                match packet_sender
+                                    .unwrap()
+                                    .send(Packet::JoinChannel {
+                                        channel: chl_name,
+                                    })
+                                    .await
+                                {
+                                    Ok(_) => {
+                                        println!("res !");
+                                    }
+                                    Err(err) => {
+                                        println!("res err {}", err);
+                                    }
+                                }
+                            });
                         },
                     }
                 }

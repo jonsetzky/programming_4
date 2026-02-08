@@ -20,9 +20,10 @@ mod tcp_chat_client;
 mod route;
 
 use tcp_chat_client::TcpChatClient;
+use tokio::sync::mpsc::Sender;
 use uuid::Uuid;
 
-use crate::{packet_builder::PacketBuilder, route::Route};
+use crate::{packet::Packet, packet_builder::PacketBuilder, route::Route};
 #[derive(Debug, Store, Clone)]
 struct AppState {
     packet_builder: PacketBuilder,
@@ -30,6 +31,22 @@ struct AppState {
     address: Signal<String>,
     connection_notification: Signal<String>,
     channels: Signal<Vec<String>>,
+    // send_channel: Signal<Option>,
+    packet_sender: Signal<Option<Sender<Packet>>>,
+}
+
+impl AppState {
+    #[inline]
+    pub fn send(&self, packet: Packet) {
+        let packet_sender = self.packet_sender;
+        if packet_sender().is_none() {
+            println!("Trying to send() while not connected!");
+            return;
+        }
+
+        // todo handle error?
+        let _ = packet_sender().unwrap().send(packet);
+    }
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");
@@ -48,6 +65,7 @@ fn App() -> Element {
             address: Signal::new(String::from("127.0.0.1:10000")),
             connection_notification: Signal::new(String::from("")),
             channels: Signal::new(vec![]),
+            packet_sender: Signal::new(None),
         };
     });
 

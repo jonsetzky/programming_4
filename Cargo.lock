@@ -2755,6 +2755,7 @@ dependencies = [
  "dioxus-stores",
  "directories",
  "dotenvy",
+ "lazy_static",
  "libsqlite3-sys",
  "num",
  "rand 0.9.2",
