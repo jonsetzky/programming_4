@@ -1,11 +1,10 @@
 use std::{io, time::Duration};
 
-use dioxus::{html::h1, prelude::*};
+use dioxus::prelude::*;
 use dioxus_primitives::{ContentAlign, ContentSide};
 use lazy_static::lazy_static;
-use neighbor_chat::packet_builder::PacketBuilder;
 use regex::Regex;
-use tokio::{select, sync::oneshot};
+use tokio::sync::oneshot;
 
 // idea from https://stackoverflow.com/questions/59170011/why-the-result-of-regexnew-cannot-be-assigned-to-a-constant
 lazy_static! {
@@ -37,10 +36,10 @@ async fn read_loop(mut client: TcpChatClient, mut active_channel: Signal<String>
             }
             Ok(packet) => packet,
         };
-        println!(
-            "got packet {}",
-            String::from_utf8(packet.into_bytes()).unwrap()
-        );
+        // println!(
+        //     "got packet {}",
+        //     String::from_utf8(packet.into_bytes()).unwrap()
+        // );
 
         match packet {
             Packet::ListChannels { channels } => {
@@ -51,9 +50,11 @@ async fn read_loop(mut client: TcpChatClient, mut active_channel: Signal<String>
             }
             Packet::ChangeTopic { topic } => {
                 //todo handle
+                println!("NEW TOPIC: {}", topic);
             }
             Packet::Chat(message) => {
                 // todo handle
+                println!("MESSAGE: [{}]: {}", message.user, message.message);
             }
             Packet::Error {
                 error,
@@ -62,15 +63,16 @@ async fn read_loop(mut client: TcpChatClient, mut active_channel: Signal<String>
                 println!("got error packet!: {}", error);
             }
             Packet::Status { status } => {
-                println!("STATUS: {}", status);
-
                 if let Some(caps) = JOIN_CHANNEL_STATUS_REGEX.captures(status.as_str()) {
                     let channel_name = &caps[1];
                     active_channel.set(channel_name.into());
+                } else {
+                    println!("STATUS: {}", status);
                 }
             }
             Packet::JoinChannel { channel } => {
                 // todo handle
+                println!("received JoinChannel packet from server. weird..")
             }
             _ => println!("unhandled packet type"),
         }
@@ -158,12 +160,6 @@ pub fn Home() -> Element {
     });
 
     rsx! {
-        // p {
-        //     onclick: move |_| {
-        //         nav.replace(Route::Login);
-        //     },
-        //     "home"
-        // }
         svg {
             width: "360",
             height: "198",
@@ -211,7 +207,6 @@ pub fn Home() -> Element {
                             let chl = chl.clone();
                             spawn(async move {
                                 let chl_name = get_channel_name(chl);
-                                println!("{}", chl_name);
 
                                 // todo handle errors?
                                 match packet_sender
@@ -221,11 +216,12 @@ pub fn Home() -> Element {
                                     })
                                     .await
                                 {
-                                    Ok(_) => {
-                                        println!("res !");
-                                    }
+                                    Ok(_) => {}
                                     Err(err) => {
-                                        println!("res err {}", err);
+                                        println!(
+                                            "Got error when sending packet down the mpsc channel! {}",
+                                            err,
+                                        );
                                     }
                                 }
                             });
