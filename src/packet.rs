@@ -7,7 +7,7 @@ use serde_with::serde_as;
 use uuid::Uuid;
 
 #[allow(non_snake_case)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct ChatMessage {
     pub id: Uuid,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -23,6 +23,11 @@ impl ChatMessage {
         &self,
     ) -> Result<UtcDateTime, dioxus_desktop::wry::cookie::time::error::ComponentRange> {
         UtcDateTime::from_unix_timestamp(self.sent)
+    }
+}
+impl PartialEq<ChatMessage> for ChatMessage {
+    fn eq(&self, other: &ChatMessage) -> bool {
+        self.id == other.id
     }
 }
 

@@ -1,4 +1,4 @@
-use std::{io, time::Duration};
+use std::{collections::HashMap, io, time::Duration};
 
 use dioxus::prelude::*;
 use dioxus_primitives::{ContentAlign, ContentSide};
@@ -15,15 +15,19 @@ lazy_static! {
 use crate::{
     AppState,
     components::{
-        Button,
+        Button, MessageHistory,
         tooltip::{Tooltip, TooltipContent, TooltipTrigger},
     },
-    packet::Packet,
+    packet::{ChatMessage, Packet},
     route::Route,
     tcp_chat_client::TcpChatClient,
 };
 
-async fn read_loop(mut client: TcpChatClient, mut active_channel: Signal<String>) {
+async fn read_loop(
+    mut client: TcpChatClient,
+    mut active_channel: Signal<String>,
+    mut add_message: impl FnMut(ChatMessage) -> (),
+) {
     loop {
         let packet = match client.recv().await {
             Err(err) => {
@@ -53,8 +57,8 @@ async fn read_loop(mut client: TcpChatClient, mut active_channel: Signal<String>
                 println!("NEW TOPIC: {}", topic);
             }
             Packet::Chat(message) => {
-                // todo handle
                 println!("MESSAGE: [{}]: {}", message.user, message.message);
+                add_message(message)
             }
             Packet::Error {
                 error,
@@ -84,6 +88,7 @@ pub fn get_channel_name(name_with_user_count: String) -> String {
     split[..split.len() - 1].join(" ")
 }
 
+const EMPTY_VEC: Vec<ChatMessage> = vec![];
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
@@ -95,6 +100,8 @@ pub fn Home() -> Element {
     let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
     // let packet_builder = state.packet_builder.clone();
+
+    let mut channel_messages: Signal<Vec<ChatMessage>> = use_signal(|| vec![]);
 
     use_future(move || async move {
         loop {
@@ -121,7 +128,10 @@ pub fn Home() -> Element {
             let (tx, rx) = oneshot::channel::<()>();
             let _client = client.clone();
             let _read_handle = spawn(async move {
-                read_loop(_client, active_channel).await;
+                read_loop(_client, active_channel, move |message| {
+                    channel_messages.write().push(message);
+                })
+                .await;
                 let _ = tx.send(()); // notify when read loop exits
             });
 
@@ -260,11 +270,13 @@ pub fn Home() -> Element {
             }
             div {
                 display: "flex",
+                flex_direction: "column",
                 width: "100%",
                 height: "100%",
                 flex_grow: "0",
                 justify_items: "center",
                 align_items: "center",
+                MessageHistory { messages: channel_messages }
             }
         }
     }
