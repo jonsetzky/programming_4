@@ -69,7 +69,7 @@ impl Packet {
             Packet::ListChannels { .. } => json!(4),
         };
 
-        format!("{data}\n").into_bytes()
+        format!("{data}").into_bytes()
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Packet {
