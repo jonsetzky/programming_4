@@ -53,16 +53,6 @@ cargo run
 | Running db migration                   | `diesel migration generate --diff-schema <migration-name>` |
 | Using separate db for multiple clients | `export DATABASE_URL=database1.db`                         |
 
-# Peer-to-peer architecture
+## Misc Notes
 
-When a client joins it sends Hello packet publicly. All connected clients will respond to that hello packet using direct messages.
-
-All connected clients are expected to have a consensus of existing channels. The joining client asks one of the connected clients for channels using RequestChannels packet. And then the responding client sends RespondChannels packet to the public channel, which all clients will handle. This results in all clients having matching channel lists.
-
-## Syncing channels between clients
-
-A client can send RequestChannels packet, which contains uuids of the channels they already know. All other clients respond to that packet with channels that aren't in that request.
-
-The RequestChannels packet is sent to all new clients once they join the server.
-
-TODO (This isn't implemented): A channel name collision can happen. This is resolved by dropping the channel with latter creation timestamp.
+- Multiple messages can be sent in a single message separated by newline `\n`?
