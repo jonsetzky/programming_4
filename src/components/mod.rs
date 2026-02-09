@@ -16,6 +16,9 @@ pub use button::Button;
 mod notification;
 pub use notification::Notification;
 
+mod user_panel;
+pub use user_panel::UserPanel;
+
 pub mod routes;
 // pub use routes::Home;
 // pub use routes::Login;
