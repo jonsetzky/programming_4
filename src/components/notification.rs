@@ -1,6 +1,4 @@
-use dioxus::{html::style, prelude::*};
-use dioxus_logger::tracing;
-use regex::Regex;
+use dioxus::prelude::*;
 
 use crate::AppState;
 
@@ -8,11 +6,13 @@ use crate::AppState;
 pub fn Notification() -> Element {
     let state = use_context::<AppState>();
     let notification = state.connection_notification;
+
     let class = if notification.is_empty() {
         "notification hide"
     } else {
         "notification"
     };
+
     rsx! {
         div { class, "{notification}" }
     }

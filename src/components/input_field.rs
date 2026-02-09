@@ -1,5 +1,4 @@
-use dioxus::{html::style, prelude::*};
-use dioxus_logger::tracing;
+use dioxus::prelude::*;
 use regex::Regex;
 
 #[component]

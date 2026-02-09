@@ -1,7 +1,6 @@
 use std::{collections::HashMap, io, time::Duration};
 
 use dioxus::prelude::*;
-use dioxus_primitives::{ContentAlign, ContentSide};
 use lazy_static::lazy_static;
 use regex::Regex;
 use tokio::sync::{mpsc::Receiver, oneshot};
@@ -14,10 +13,7 @@ lazy_static! {
 
 use crate::{
     AppState,
-    components::{
-        Button, ChannelButton, MessageBox, MessageHistory, UserPanel,
-        tooltip::{Tooltip, TooltipContent, TooltipTrigger},
-    },
+    components::{Button, ChannelButton, MessageBox, MessageHistory, UserPanel},
     packet::{ChatMessage, Packet},
     route::Route,
     tcp_chat_client::TcpChatClient,
@@ -60,8 +56,8 @@ async fn client_connect_loop(
         connected.set(true);
         connection_notification.set(String::from(""));
 
-        let (sendTx, sendRx) = tokio::sync::mpsc::channel::<Packet>(100);
-        packet_sender.set(Some(sendTx));
+        let (send_tx, send_rx) = tokio::sync::mpsc::channel::<Packet>(100);
+        packet_sender.set(Some(send_tx));
 
         let (tx, rx) = oneshot::channel::<()>();
         let _client = client.clone();
@@ -77,7 +73,7 @@ async fn client_connect_loop(
 
         let _client = client.clone();
         let _write_handle = spawn(async move {
-            write_loop(_client, sendRx).await;
+            write_loop(_client, send_rx).await;
         });
 
         let _ = client.send(Packet::ListChannels { channels: None }).await;
@@ -126,7 +122,7 @@ async fn read_loop(
             }
             Packet::Error {
                 error,
-                clientshutdown,
+                clientshutdown: _,
             } => {
                 println!("got error packet!: {}", error);
             }
@@ -138,11 +134,10 @@ async fn read_loop(
                     println!("STATUS: {}", status);
                 }
             }
-            Packet::JoinChannel { channel } => {
+            Packet::JoinChannel { channel: _ } => {
                 // todo handle
                 println!("received JoinChannel packet from server. weird..")
             }
-            _ => println!("unhandled packet type"),
         }
     }
 }
@@ -190,7 +185,8 @@ pub fn Home() -> Element {
     );
 
     use_effect(move || {
-        let messages = messages.read();
+        // run this effect every time messages update
+        let _messages = messages.read();
 
         // todo add check if should autoscroll or not!
         document::eval(r#"document.getElementById("page-anchor").scrollIntoView()"#);

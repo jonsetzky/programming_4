@@ -4,8 +4,6 @@ use std::sync::LazyLock;
 
 use directories::ProjectDirs;
 
-pub mod arc_mutex_signal;
-
 pub mod packet;
 pub mod packet_builder;
 pub mod tcp_chat_client;

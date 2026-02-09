@@ -1,8 +1,6 @@
-use core::error;
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
-use dioxus_desktop::wry::cookie::time::UtcDateTime;
 use serde_json::{Value, json};
 use serde_with::serde_as;
 use uuid::Uuid;
@@ -58,10 +56,6 @@ pub enum Packet {
 }
 
 impl Packet {
-    pub fn into_json(self) -> Result<Value, serde_json::Error> {
-        serde_json::to_value(&self)
-    }
-
     pub fn into_bytes(&self) -> Vec<u8> {
         let mut data = serde_json::to_value(&self).expect("coudln't convert packet into json");
 

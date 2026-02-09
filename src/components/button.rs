@@ -1,6 +1,4 @@
-use dioxus::{html::style, prelude::*};
-use dioxus_logger::tracing;
-use regex::Regex;
+use dioxus::prelude::*;
 
 #[component]
 pub fn Button(
@@ -14,7 +12,7 @@ pub fn Button(
             disabled,
             class,
             r#type: "text",
-            onclick: move |evt| {
+            onclick: move |_evt| {
                 onclick.map(|f| f(()));
             },
             "{label}"

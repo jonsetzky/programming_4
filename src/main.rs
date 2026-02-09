@@ -2,16 +2,11 @@
 extern crate directories;
 use std::fs;
 
-use dioxus::{html::u::background_color, prelude::*};
+use dioxus::prelude::*;
 use dioxus_desktop::{Config, LogicalSize, WindowBuilder};
 
 mod components;
 use components::*;
-
-// mod o4_chat_client;
-// use o4_chat_client::O4ChatClient;
-
-mod arc_mutex_signal;
 
 mod packet;
 mod packet_builder;
@@ -19,9 +14,7 @@ mod tcp_chat_client;
 
 mod route;
 
-use tcp_chat_client::TcpChatClient;
 use tokio::sync::mpsc::Sender;
-use uuid::Uuid;
 
 use crate::{packet::Packet, packet_builder::PacketBuilder, route::Route};
 #[derive(Debug, Store, Clone)]
@@ -31,36 +24,16 @@ struct AppState {
     address: Signal<String>,
     connection_notification: Signal<String>,
     channels: Signal<Vec<String>>,
-    // send_channel: Signal<Option>,
     packet_sender: Signal<Option<Sender<Packet>>>,
 }
 
 impl AppState {
-    #[inline]
-    pub fn send(&self, packet: Packet) {
-        let packet_sender = self.packet_sender;
-        if packet_sender().is_none() {
-            println!("Trying to send() while not connected!");
-            return;
-        }
-
-        // todo handle error?
-        let _ = packet_sender().unwrap().send(packet);
-    }
     pub fn packet_builder(&self) -> PacketBuilder {
         self.packet_builder.clone()
     }
-}
 
-static RESET_CSS: Asset = asset!("/assets/reset.css");
-static MAIN_CSS: Asset = asset!("/assets/main.css");
-
-// todo use embedded font?
-#[component]
-fn App() -> Element {
-    use_context_provider(|| {
+    pub fn new() -> AppState {
         let username = String::from("");
-        // todo use actual user id
         let packet_builder = PacketBuilder::new(username.clone());
         return AppState {
             packet_builder,
@@ -70,7 +43,16 @@ fn App() -> Element {
             channels: Signal::new(vec![]),
             packet_sender: Signal::new(None),
         };
-    });
+    }
+}
+
+static RESET_CSS: Asset = asset!("/assets/reset.css");
+static MAIN_CSS: Asset = asset!("/assets/main.css");
+
+// todo use embedded font?
+#[component]
+fn App() -> Element {
+    use_context_provider(|| AppState::new());
 
     rsx! {
         document::Stylesheet { href: RESET_CSS }

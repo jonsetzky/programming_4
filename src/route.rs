@@ -1,6 +1,5 @@
 use dioxus::prelude::*;
 
-use crate::AppState;
 use crate::components::routes::Home;
 use crate::components::routes::Login;
 
@@ -10,6 +9,4 @@ pub enum Route {
     Login,
     #[route("/home")]
     Home,
-    // #[route("/user/:id")]
-    // User { id: u32 },
 }

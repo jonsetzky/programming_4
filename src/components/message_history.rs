@@ -21,7 +21,6 @@ fn Message(message: ChatMessage, is_me: bool) -> Element {
             div {
                 max_width: "29rem",
                 font_size: "12px",
-                // min_height: "2.3rem",
                 background_color: "#262626",
                 border_radius: "6px",
                 padding: "8px 10px 10px 10px",
@@ -58,12 +57,8 @@ pub fn MessageHistory(messages: Vec<ChatMessage>) -> Element {
                 }
             }
 
-            div {
-                id: "page-anchor",
-                width: "100%",
-                height: "1px",
-                onmounted: move |evt| {}, // spawn(async move {,
-            }
+            // used for autoscrolling when new messages are added
+            div { id: "page-anchor", width: "100%", height: "1px" }
         }
     }
 }

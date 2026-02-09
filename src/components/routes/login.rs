@@ -1,4 +1,4 @@
-use dioxus::{html::h1, prelude::*};
+use dioxus::prelude::*;
 
 use crate::{
     AppState,

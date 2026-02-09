@@ -1,14 +1,6 @@
 use crate::packet::Packet;
-use crate::{
-    AppState,
-    components::{
-        Button,
-        tooltip::{Tooltip, TooltipContent, TooltipTrigger},
-    },
-};
+use crate::{AppState, components::Button};
 use dioxus::prelude::*;
-use dioxus_primitives::{ContentAlign, ContentSide};
-use tokio::sync::mpsc::Sender;
 
 pub fn get_channel_name(name_with_user_count: String) -> String {
     let split = name_with_user_count.split(" ").collect::<Vec<&str>>();
@@ -34,7 +26,6 @@ pub fn ChannelButton(name_with_user_count: String, active_channel: Signal<String
                     return;
                 }
                 spawn(async move {
-                    // todo handle errors?
                     match packet_sender
                         .unwrap()
                         .send(Packet::JoinChannel {
@@ -44,12 +35,9 @@ pub fn ChannelButton(name_with_user_count: String, active_channel: Signal<String
                     {
                         Ok(_) => {}
                         Err(err) => {
-                            println!(
-                                "Got error when sending packet down the mpsc channel! {}",
-                                err,
-                            );
+                            println!("Failed to send packet down the mpsc channel: {}", err);
                         }
-                    }
+                    };
                 });
             },
         }

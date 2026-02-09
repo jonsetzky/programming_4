@@ -1,11 +1,9 @@
 use dioxus::prelude::*;
-use neighbor_chat::packet;
 use tokio::sync::mpsc::Sender;
 
 use crate::{
     AppState,
     packet::{ChatMessage, Packet},
-    packet_builder::PacketBuilder,
 };
 
 fn send_message(packet_sender: Sender<Packet>, message: String) -> ChatMessage {
@@ -17,14 +15,10 @@ fn send_message(packet_sender: Sender<Packet>, message: String) -> ChatMessage {
         _ => panic!("unreachable code"),
     };
     spawn(async move {
-        // todo handle errors?
         match packet_sender.send(packet).await {
             Ok(_) => {}
             Err(err) => {
-                println!(
-                    "Got error when sending packet down the mpsc channel! {}",
-                    err,
-                );
+                println!("Failed to send packet down the mpsc channel: {}", err);
             }
         }
     });
