@@ -23,6 +23,71 @@ use crate::{
     tcp_chat_client::TcpChatClient,
 };
 
+pub fn on_recv_msg(
+    mut messages: Signal<HashMap<String, Vec<ChatMessage>>>,
+    active_channel: Signal<String>,
+) -> impl FnMut(ChatMessage) -> () {
+    move |message| {
+        let mut messages = messages.write();
+        let Some(existing_channel) = messages.get_mut(&active_channel()) else {
+            messages.insert(active_channel(), vec![message]);
+            return;
+        };
+        existing_channel.push(message);
+    }
+}
+
+async fn client_connect_loop(
+    mut connected: Signal<bool>,
+    active_channel: Signal<String>,
+    messages: Signal<HashMap<String, Vec<ChatMessage>>>,
+) {
+    let state = use_context::<AppState>();
+    let mut connection_notification = state.connection_notification;
+    let mut packet_sender = state.packet_sender;
+    loop {
+        connected.set(false);
+        let client = match TcpChatClient::connect(Some(state.address.to_string().as_str())).await {
+            Ok(client) => client,
+            Err(_err) => {
+                connection_notification.set(String::from("Error connecting to the server."));
+                // println!("error connecting. attempting again in 5 seconds");
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                connected.set(false);
+                continue;
+            }
+        };
+
+        connected.set(true);
+        connection_notification.set(String::from(""));
+
+        let (sendTx, sendRx) = tokio::sync::mpsc::channel::<Packet>(100);
+        packet_sender.set(Some(sendTx));
+
+        let (tx, rx) = oneshot::channel::<()>();
+        let _client = client.clone();
+        let _read_handle = spawn(async move {
+            read_loop(
+                _client,
+                active_channel,
+                on_recv_msg(messages, active_channel),
+            )
+            .await;
+            let _ = tx.send(()); // notify when read loop exits
+        });
+
+        let _client = client.clone();
+        let _write_handle = spawn(async move {
+            write_loop(_client, sendRx).await;
+        });
+
+        let _ = client.send(Packet::ListChannels { channels: None }).await;
+
+        let _ = rx.await;
+        _write_handle.cancel();
+    }
+}
+
 async fn read_loop(
     mut client: TcpChatClient,
     mut active_channel: Signal<String>,
@@ -114,81 +179,24 @@ pub fn get_channel_name(name_with_user_count: String) -> String {
     split[..split.len() - 1].join(" ")
 }
 
-pub fn on_recv_msg(
-    mut messages: Signal<HashMap<String, Vec<ChatMessage>>>,
-    active_channel: Signal<String>,
-) -> impl FnMut(ChatMessage) -> () {
-    move |message| {
-        let mut messages = messages.write();
-        let Some(existing_channel) = messages.get_mut(&active_channel()) else {
-            messages.insert(active_channel(), vec![message]);
-            return;
-        };
-        existing_channel.push(message);
-    }
-}
-
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
     let state = use_context::<AppState>();
-    let mut connection_notification = state.connection_notification;
-    let mut connected = use_signal(|| false);
-    let mut packet_sender = state.packet_sender;
+    let connected = use_signal(|| false);
+    let packet_sender = state.packet_sender;
 
     let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
     // let packet_builder = state.packet_builder.clone();
 
     // let mut channel_messages: Signal<Vec<ChatMessage>> = use_signal(|| vec![]);
-    let mut messages: Signal<HashMap<String, Vec<ChatMessage>>> =
+    let messages: Signal<HashMap<String, Vec<ChatMessage>>> =
         use_signal(|| HashMap::<String, Vec<ChatMessage>>::new());
 
-    use_future(move || async move {
-        loop {
-            connected.set(false);
-            let client = match TcpChatClient::connect(Some(state.address.to_string().as_str()))
-                .await
-            {
-                Ok(client) => client,
-                Err(_err) => {
-                    connection_notification.set(String::from("Error connecting to the server."));
-                    // println!("error connecting. attempting again in 5 seconds");
-                    tokio::time::sleep(Duration::from_secs(5)).await;
-                    connected.set(false);
-                    continue;
-                }
-            };
-
-            connected.set(true);
-            connection_notification.set(String::from(""));
-
-            let (sendTx, sendRx) = tokio::sync::mpsc::channel::<Packet>(100);
-            packet_sender.set(Some(sendTx));
-
-            let (tx, rx) = oneshot::channel::<()>();
-            let _client = client.clone();
-            let _read_handle = spawn(async move {
-                read_loop(
-                    _client,
-                    active_channel,
-                    on_recv_msg(messages, active_channel),
-                )
-                .await;
-                let _ = tx.send(()); // notify when read loop exits
-            });
-
-            let _client = client.clone();
-            let _write_handle = spawn(async move {
-                write_loop(_client, sendRx).await;
-            });
-
-            let _ = client.send(Packet::ListChannels { channels: None }).await;
-
-            let _ = rx.await;
-            _write_handle.cancel();
-        }
-    });
+    use_future(
+        move || async move { client_connect_loop(connected, active_channel, messages).await },
+    );
 
     rsx! {
         div {
