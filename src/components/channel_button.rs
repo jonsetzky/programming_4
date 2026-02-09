@@ -21,13 +21,18 @@ pub fn ChannelButton(name_with_user_count: String, active_channel: Signal<String
     let packet_sender = state.packet_sender;
 
     let channel_name = get_channel_name(name_with_user_count);
+    let is_active_channel = channel_name == active_channel();
 
     rsx! {
         Button {
-            class: if channel_name == active_channel() { "neighborhood-button-current" } else { "neighborhood-button" },
+            disabled: is_active_channel,
+            class: if is_active_channel { "neighborhood-button-current" } else { "neighborhood-button" },
             label: channel_name.clone(),
             onclick: move |_evt| {
                 let chl_name = channel_name.clone();
+                if chl_name == active_channel() {
+                    return;
+                }
                 spawn(async move {
                     // todo handle errors?
                     match packet_sender
