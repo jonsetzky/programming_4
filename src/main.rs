@@ -47,6 +47,9 @@ impl AppState {
         // todo handle error?
         let _ = packet_sender().unwrap().send(packet);
     }
+    pub fn packet_builder(&self) -> PacketBuilder {
+        self.packet_builder.clone()
+    }
 }
 
 static RESET_CSS: Asset = asset!("/assets/reset.css");

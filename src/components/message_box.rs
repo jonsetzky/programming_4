@@ -8,11 +8,9 @@ use crate::{
     packet_builder::PacketBuilder,
 };
 
-fn send_message(
-    packet_builder: PacketBuilder,
-    packet_sender: Sender<Packet>,
-    message: String,
-) -> ChatMessage {
+fn send_message(packet_sender: Sender<Packet>, message: String) -> ChatMessage {
+    let state = use_context::<AppState>();
+    let packet_builder = state.packet_builder();
     let packet = packet_builder.chat_message(message);
     let msg = match &packet {
         Packet::Chat(msg) => msg.clone(),
@@ -41,7 +39,6 @@ pub fn MessageBox(
 ) -> Element {
     let state = use_context::<AppState>();
     let packet_sender = state.packet_sender;
-    let packet_builder = state.packet_builder;
 
     let mut message = use_signal(|| String::from(""));
 
@@ -68,6 +65,21 @@ pub fn MessageBox(
                     oninput: move |event| {
                         message.set(event.value());
                     },
+                    onkeypress: move |event| {
+                        if event.key() == Key::Enter {
+                            event.prevent_default();
+                            match packet_sender() {
+                                Some(packet_sender) => {
+                                    let msg = send_message(packet_sender, message());
+                                    add_message(msg);
+                                    message.set(String::from(""));
+                                }
+                                None => {
+                                    println!("cant send message because packet_sender is null");
+                                }
+                            }
+                        }
+                    },
                     "Message here"
                 }
                 button {
@@ -87,7 +99,7 @@ pub fn MessageBox(
                     onclick: move |_| {
                         match packet_sender() {
                             Some(packet_sender) => {
-                                let msg = send_message(packet_builder.clone(), packet_sender, message());
+                                let msg = send_message(packet_sender, message());
                                 add_message(msg);
                                 message.set(String::from(""));
                             }
