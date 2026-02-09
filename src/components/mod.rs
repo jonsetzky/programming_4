@@ -19,6 +19,9 @@ pub use user_panel::UserPanel;
 mod channel_button;
 pub use channel_button::ChannelButton;
 
+mod create_channel_button;
+pub use create_channel_button::CreateChannelButton;
+
 pub mod routes;
 
 pub mod tooltip;

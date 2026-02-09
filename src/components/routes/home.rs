@@ -13,11 +13,18 @@ lazy_static! {
 
 use crate::{
     AppState,
-    components::{Button, ChannelButton, MessageBox, MessageHistory, UserPanel},
+    components::{
+        Button, ChannelButton, CreateChannelButton, MessageBox, MessageHistory, UserPanel,
+    },
     packet::{ChatMessage, Packet},
     route::Route,
     tcp_chat_client::TcpChatClient,
 };
+
+pub fn get_channel_name(name_with_user_count: String) -> String {
+    let split = name_with_user_count.split(" ").collect::<Vec<&str>>();
+    split[..split.len() - 1].join(" ")
+}
 
 pub fn add_message_to_messages(
     mut messages: Signal<HashMap<String, Vec<ChatMessage>>>,
@@ -110,7 +117,12 @@ async fn read_loop(
                 let Some(channels) = channels else {
                     continue;
                 };
-                consume_context::<AppState>().channels.set(channels);
+                consume_context::<AppState>().channels.set(
+                    channels
+                        .iter()
+                        .map(|chl| get_channel_name(chl.to_string()))
+                        .collect(),
+                );
             }
             Packet::ChangeTopic { topic } => {
                 //todo handle
@@ -129,6 +141,7 @@ async fn read_loop(
             Packet::Status { status } => {
                 if let Some(caps) = JOIN_CHANNEL_STATUS_REGEX.captures(status.as_str()) {
                     let channel_name = &caps[1];
+                    println!("STATUS: updated current channel to {}", channel_name);
                     active_channel.set(channel_name.into());
                 } else {
                     println!("STATUS: {}", status);
@@ -174,7 +187,7 @@ pub fn Home() -> Element {
     let state = use_context::<AppState>();
     let connected = use_signal(|| false);
 
-    let channels = state.channels;
+    let mut channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
 
     let messages: Signal<HashMap<String, Vec<ChatMessage>>> =
@@ -218,10 +231,11 @@ pub fn Home() -> Element {
                 }
                 hr { align_self: "center" }
                 for chl in channels() {
-                    ChannelButton { active_channel, name_with_user_count: chl }
+                    ChannelButton { active_channel, name: chl }
                 }
                 hr { align_self: "center" }
-                Button { class: "add-neighborhood-button", label: "+ Add" }
+                CreateChannelButton {
+                }
                 div { flex: "1" }
                 hr { align_self: "center" }
                 UserPanel { connected, username: state.username }

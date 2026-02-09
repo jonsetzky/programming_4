@@ -3,10 +3,12 @@ use regex::Regex;
 
 #[component]
 pub fn InputField(
+    class: Option<String>,
     label: Option<String>,
     placeholder: String,
     value: Signal<String>,
     legal_regex: Option<String>,
+    onblur: Option<Callback<Event<FocusData>>>,
 ) -> Element {
     let re = use_hook(|| match legal_regex {
         Some(regex) => Some(Regex::new(regex.as_str()).expect("failed to build regex")),
@@ -39,7 +41,12 @@ pub fn InputField(
                         value.set(value())
                     }
                 },
-
+                onblur: move |evt| {
+                    let Some(onblur) = onblur else {
+                        return;
+                    };
+                    onblur(evt);
+                },
                 value,
                 placeholder,
             }
