@@ -101,7 +101,9 @@ pub fn Home() -> Element {
     let active_channel = use_signal(|| String::from(""));
     // let packet_builder = state.packet_builder.clone();
 
-    let mut channel_messages: Signal<Vec<ChatMessage>> = use_signal(|| vec![]);
+    // let mut channel_messages: Signal<Vec<ChatMessage>> = use_signal(|| vec![]);
+    let mut messages: Signal<HashMap<String, Vec<ChatMessage>>> =
+        use_signal(|| HashMap::<String, Vec<ChatMessage>>::new());
 
     use_future(move || async move {
         loop {
@@ -129,7 +131,12 @@ pub fn Home() -> Element {
             let _client = client.clone();
             let _read_handle = spawn(async move {
                 read_loop(_client, active_channel, move |message| {
-                    channel_messages.write().push(message);
+                    let mut messages = messages.write();
+                    let Some(existing_channel) = messages.get_mut(&active_channel()) else {
+                        messages.insert(active_channel(), vec![message]);
+                        return;
+                    };
+                    existing_channel.push(message);
                 })
                 .await;
                 let _ = tx.send(()); // notify when read loop exits
@@ -276,7 +283,7 @@ pub fn Home() -> Element {
                 flex_grow: "0",
                 justify_items: "center",
                 align_items: "center",
-                MessageHistory { messages: channel_messages }
+                MessageHistory { messages: messages.get(&active_channel()).map(|m| m.clone()).unwrap_or_default() }
             }
         }
     }
