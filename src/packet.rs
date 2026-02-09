@@ -236,7 +236,7 @@ mod tests {
             format!("\"id\":\"{id}\""),
             String::from("\"message\":\"message\""),
             String::from("\"user\":\"test user\""),
-            String::from("\"sent\":16782697219"),
+            String::from("\"sent\":1770656066123"),
         ];
 
         let mut ser_val = String::from_utf8(val.into_bytes()).unwrap();
