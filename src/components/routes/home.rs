@@ -232,10 +232,13 @@ pub fn Home() -> Element {
                 justify_items: "center",
                 align_items: "center",
                 MessageHistory { messages: messages.get(&active_channel()).map(|m| m.clone()).unwrap_or_default() }
+                div { flex: "1" }
                 MessageBox {
                     disabled: false,
                     add_message: add_message_to_messages(messages, active_channel),
+                    active_channel,
                 }
+                div { height: "0.4rem" }
             }
         }
     }
