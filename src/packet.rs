@@ -1,6 +1,7 @@
 use core::error;
 use std::str::FromStr;
 
+use chrono::{DateTime, Utc};
 use dioxus_desktop::wry::cookie::time::UtcDateTime;
 use serde_json::{Value, json};
 use serde_with::serde_as;
@@ -16,13 +17,12 @@ pub struct ChatMessage {
     pub user: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub directMessageTo: Option<String>,
+    // timestamp in milliseconds
     pub sent: i64,
 }
 impl ChatMessage {
-    pub fn datetime(
-        &self,
-    ) -> Result<UtcDateTime, dioxus_desktop::wry::cookie::time::error::ComponentRange> {
-        UtcDateTime::from_unix_timestamp(self.sent)
+    pub fn datetime(&self) -> Option<DateTime<Utc>> {
+        DateTime::from_timestamp_millis(self.sent)
     }
 }
 impl PartialEq<ChatMessage> for ChatMessage {
@@ -229,7 +229,7 @@ mod tests {
             message: String::from("message"),
             user: String::from("test user"),
             directMessageTo: None,
-            sent: 16782697219,
+            sent: 1770656066123,
         });
 
         let parts: Vec<String> = vec![
@@ -262,7 +262,7 @@ mod tests {
                 SystemTime::now()
                     .duration_since(SystemTime::UNIX_EPOCH)
                     .unwrap()
-                    .as_secs(),
+                    .as_millis(),
             )
             .expect("timestamp doesn't fint i64"),
         });

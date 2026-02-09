@@ -19,6 +19,11 @@ impl PacketBuilder {
         }
     }
 
+    pub fn get_nickname(&self) -> String {
+        let nick = self.nickname.lock().unwrap();
+        nick.to_string()
+    }
+
     pub fn set_nickname(&self, new: &String) {
         let mut nick = self.nickname.lock().unwrap();
         *nick = new.to_string();
@@ -35,7 +40,7 @@ impl PacketBuilder {
             SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("system time before unix epoch")
-                .as_secs(),
+                .as_millis(),
         )
         .expect("timestamp wouldn't fit into i64");
 
