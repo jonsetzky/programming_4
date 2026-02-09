@@ -108,6 +108,7 @@ fn main() {
                     .with_always_on_top(false)
                     .with_inner_size(LogicalSize {width: 1280, height: 720})
                     .with_title("Neighbor Chat")
+                    .with_min_inner_size(LogicalSize {width: 804, height: 520})
            )
         })
         .launch(App);
