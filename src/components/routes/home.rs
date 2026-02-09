@@ -15,7 +15,7 @@ lazy_static! {
 use crate::{
     AppState,
     components::{
-        Button, ChannelButton, MessageHistory, UserPanel,
+        Button, ChannelButton, MessageBox, MessageHistory, UserPanel,
         tooltip::{Tooltip, TooltipContent, TooltipTrigger},
     },
     packet::{ChatMessage, Packet},
@@ -23,7 +23,7 @@ use crate::{
     tcp_chat_client::TcpChatClient,
 };
 
-pub fn on_recv_msg(
+pub fn add_message_to_messages(
     mut messages: Signal<HashMap<String, Vec<ChatMessage>>>,
     active_channel: Signal<String>,
 ) -> impl FnMut(ChatMessage) -> () {
@@ -69,7 +69,7 @@ async fn client_connect_loop(
             read_loop(
                 _client,
                 active_channel,
-                on_recv_msg(messages, active_channel),
+                add_message_to_messages(messages, active_channel),
             )
             .await;
             let _ = tx.send(()); // notify when read loop exits
@@ -178,13 +178,10 @@ pub fn Home() -> Element {
     let nav = navigator();
     let state = use_context::<AppState>();
     let connected = use_signal(|| false);
-    let packet_sender = state.packet_sender;
 
     let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
-    // let packet_builder = state.packet_builder.clone();
 
-    // let mut channel_messages: Signal<Vec<ChatMessage>> = use_signal(|| vec![]);
     let messages: Signal<HashMap<String, Vec<ChatMessage>>> =
         use_signal(|| HashMap::<String, Vec<ChatMessage>>::new());
 
@@ -235,6 +232,10 @@ pub fn Home() -> Element {
                 justify_items: "center",
                 align_items: "center",
                 MessageHistory { messages: messages.get(&active_channel()).map(|m| m.clone()).unwrap_or_default() }
+                MessageBox {
+                    disabled: false,
+                    add_message: add_message_to_messages(messages, active_channel),
+                }
             }
         }
     }
