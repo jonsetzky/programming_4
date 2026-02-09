@@ -48,7 +48,6 @@ pub fn MessageBox(
                 display: "flex",
                 flex_direction: "row",
                 width: "100%",
-                max_width: "36rem",
                 flex_grow: "1",
                 justify_items: "center",
                 align_items: "center",

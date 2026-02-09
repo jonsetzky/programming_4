@@ -189,6 +189,13 @@ pub fn Home() -> Element {
         move || async move { client_connect_loop(connected, active_channel, messages).await },
     );
 
+    use_effect(move || {
+        let messages = messages.read();
+
+        // todo add check if should autoscroll or not!
+        document::eval(r#"document.getElementById("page-anchor").scrollIntoView()"#);
+    });
+
     rsx! {
         div {
             display: "flex",
@@ -223,22 +230,24 @@ pub fn Home() -> Element {
                 hr { align_self: "center" }
                 UserPanel { connected, username: state.username }
             }
-            div {
-                display: "flex",
-                flex_direction: "column",
-                width: "100%",
-                height: "100%",
-                flex_grow: "0",
-                justify_items: "center",
-                align_items: "center",
-                MessageHistory { messages: messages.get(&active_channel()).map(|m| m.clone()).unwrap_or_default() }
-                div { flex: "1" }
-                MessageBox {
-                    disabled: false,
-                    add_message: add_message_to_messages(messages, active_channel),
-                    active_channel,
+            div { display: "flex", justify_content: "center", width: "100%",
+                div {
+                    display: "flex",
+                    flex_direction: "column",
+                    max_width: "36rem",
+                    height: "100%",
+                    flex_grow: "1",
+                    justify_content: "center",
+                    align_items: "center",
+                    MessageHistory { messages: messages.get(&active_channel()).map(|m| m.clone()).unwrap_or_default() }
+                    div { flex: "1" }
+                    MessageBox {
+                        disabled: false,
+                        add_message: add_message_to_messages(messages, active_channel),
+                        active_channel,
+                    }
+                    div { height: "0.4rem" }
                 }
-                div { height: "0.4rem" }
             }
         }
     }
