@@ -15,7 +15,7 @@ lazy_static! {
 use crate::{
     AppState,
     components::{
-        Button, MessageHistory, UserPanel,
+        Button, ChannelButton, MessageHistory, UserPanel,
         tooltip::{Tooltip, TooltipContent, TooltipTrigger},
     },
     packet::{ChatMessage, Packet},
@@ -173,11 +173,6 @@ async fn write_loop(client: TcpChatClient, mut outgoing_rx: Receiver<Packet>) {
     println!("write loop exited")
 }
 
-pub fn get_channel_name(name_with_user_count: String) -> String {
-    let split = name_with_user_count.split(" ").collect::<Vec<&str>>();
-    split[..split.len() - 1].join(" ")
-}
-
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
@@ -223,33 +218,7 @@ pub fn Home() -> Element {
                 }
                 hr { align_self: "center" }
                 for chl in channels() {
-                    Button {
-                        class: if get_channel_name(chl.clone()) == active_channel() { "neighborhood-button-current" } else { "neighborhood-button" },
-                        label: get_channel_name(chl.clone()),
-                        onclick: move |_evt| {
-                            let chl = chl.clone();
-                            spawn(async move {
-                                let chl_name = get_channel_name(chl);
-
-                                // todo handle errors?
-                                match packet_sender
-                                    .unwrap()
-                                    .send(Packet::JoinChannel {
-                                        channel: chl_name,
-                                    })
-                                    .await
-                                {
-                                    Ok(_) => {}
-                                    Err(err) => {
-                                        println!(
-                                            "Got error when sending packet down the mpsc channel! {}",
-                                            err,
-                                        );
-                                    }
-                                }
-                            });
-                        },
-                    }
+                    ChannelButton { active_channel, name_with_user_count: chl }
                 }
                 hr { align_self: "center" }
                 Button { class: "add-neighborhood-button", label: "+ Add" }
