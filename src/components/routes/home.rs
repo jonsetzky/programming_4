@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use dioxus_primitives::{ContentAlign, ContentSide};
 use lazy_static::lazy_static;
 use regex::Regex;
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc::Receiver, oneshot};
 
 // idea from https://stackoverflow.com/questions/59170011/why-the-result-of-regexnew-cannot-be-assigned-to-a-constant
 lazy_static! {
@@ -83,12 +83,51 @@ async fn read_loop(
     }
 }
 
+async fn write_loop(client: TcpChatClient, mut outgoing_rx: Receiver<Packet>) {
+    println!("starting write loop");
+    loop {
+        let Some(packet) = outgoing_rx.recv().await else {
+            break;
+        };
+        println!(
+            "sent packet {}",
+            String::from_utf8(packet.into_bytes()).unwrap()
+        );
+
+        match client.send(packet).await {
+            Err(err) => {
+                if err.kind() == io::ErrorKind::ConnectionAborted {
+                    break;
+                } else {
+                    println!("unknown error while attempting to send()");
+                    break;
+                }
+            }
+            Ok(packet) => packet,
+        };
+    }
+    println!("write loop exited")
+}
+
 pub fn get_channel_name(name_with_user_count: String) -> String {
     let split = name_with_user_count.split(" ").collect::<Vec<&str>>();
     split[..split.len() - 1].join(" ")
 }
 
-const EMPTY_VEC: Vec<ChatMessage> = vec![];
+pub fn on_recv_msg(
+    mut messages: Signal<HashMap<String, Vec<ChatMessage>>>,
+    active_channel: Signal<String>,
+) -> impl FnMut(ChatMessage) -> () {
+    move |message| {
+        let mut messages = messages.write();
+        let Some(existing_channel) = messages.get_mut(&active_channel()) else {
+            messages.insert(active_channel(), vec![message]);
+            return;
+        };
+        existing_channel.push(message);
+    }
+}
+
 #[component]
 pub fn Home() -> Element {
     let nav = navigator();
@@ -112,7 +151,7 @@ pub fn Home() -> Element {
                 .await
             {
                 Ok(client) => client,
-                Err(err) => {
+                Err(_err) => {
                     connection_notification.set(String::from("Error connecting to the server."));
                     // println!("error connecting. attempting again in 5 seconds");
                     tokio::time::sleep(Duration::from_secs(5)).await;
@@ -124,49 +163,24 @@ pub fn Home() -> Element {
             connected.set(true);
             connection_notification.set(String::from(""));
 
-            let (sendTx, mut sendRx) = tokio::sync::mpsc::channel::<Packet>(100);
+            let (sendTx, sendRx) = tokio::sync::mpsc::channel::<Packet>(100);
             packet_sender.set(Some(sendTx));
 
             let (tx, rx) = oneshot::channel::<()>();
             let _client = client.clone();
             let _read_handle = spawn(async move {
-                read_loop(_client, active_channel, move |message| {
-                    let mut messages = messages.write();
-                    let Some(existing_channel) = messages.get_mut(&active_channel()) else {
-                        messages.insert(active_channel(), vec![message]);
-                        return;
-                    };
-                    existing_channel.push(message);
-                })
+                read_loop(
+                    _client,
+                    active_channel,
+                    on_recv_msg(messages, active_channel),
+                )
                 .await;
                 let _ = tx.send(()); // notify when read loop exits
             });
 
             let _client = client.clone();
             let _write_handle = spawn(async move {
-                println!("starting write loop");
-                loop {
-                    let Some(packet) = sendRx.recv().await else {
-                        break;
-                    };
-                    println!(
-                        "sent packet {}",
-                        String::from_utf8(packet.into_bytes()).unwrap()
-                    );
-
-                    match _client.send(packet).await {
-                        Err(err) => {
-                            if err.kind() == io::ErrorKind::ConnectionAborted {
-                                break;
-                            } else {
-                                println!("unknown error while attempting to send()");
-                                break;
-                            }
-                        }
-                        Ok(packet) => packet,
-                    };
-                }
-                println!("write loop exited")
+                write_loop(_client, sendRx).await;
             });
 
             let _ = client.send(Packet::ListChannels { channels: None }).await;
