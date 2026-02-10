@@ -31,15 +31,58 @@ fn Message(message: ChatMessage, is_me: bool) -> Element {
     }
 }
 
+fn scroll_to_anchor() {
+    document::eval(r#"document.getElementById("page-anchor").scrollIntoView()"#);
+}
+
+// right after a message is sent, the distance is 66
+const AUTOSCROLL_THRESHOLD: f64 = 100.0;
+
+async fn should_autoscroll() -> Option<bool> {
+    // returns array where [current scroll, max scroll]
+    // "let c = document.getElementById("message-history-container");return [c.scrollTop, c.scrollHeight - c.offsetHeight]"
+
+    // returns distance to max scroll (distance to bottom)
+    let eval = match document::eval(
+        r#"let c = document.getElementById("message-history-container");return c.scrollHeight - c.offsetHeight - c.scrollTop"#,
+    )
+    .await
+    {
+        Ok(eval) => eval,
+        Err(err) => {
+            println!("Failed to eval scroll state getter: {}", err);
+            return None;
+        }
+    };
+    let Some(out) = eval.as_f64() else {
+        println!("Failed to parse scroll state as f64: {}", eval);
+        return None;
+    };
+
+    Some(out < AUTOSCROLL_THRESHOLD)
+}
+
 #[component]
-pub fn MessageHistory(messages: Vec<ChatMessage>) -> Element {
+pub fn MessageHistory(messages: Memo<Vec<ChatMessage>>) -> Element {
     let state = use_context::<AppState>();
     let username = state.username;
+
+    use_effect(move || {
+        // run this effect every time messages update
+        messages();
+
+        spawn(async move {
+            if should_autoscroll().await.unwrap_or(false) {
+                scroll_to_anchor();
+            }
+        });
+    });
 
     // todo join continuous messages from same sender during same minute into one block
 
     rsx! {
         div {
+            id: "message-history-container",
             overflow_y: "scroll",
             display: "flex",
             flex_direction: "column",
@@ -50,7 +93,7 @@ pub fn MessageHistory(messages: Vec<ChatMessage>) -> Element {
             justify_content: "flex-start",
             align_items: "center",
             padding: "0px 100px auto 0px",
-            for message in messages.iter() {
+            for message in messages().iter() {
                 Message {
                     message: message.clone(),
                     is_me: message.user == username(),

@@ -191,17 +191,17 @@ pub fn Home() -> Element {
     let messages: Signal<HashMap<String, Vec<ChatMessage>>> =
         use_signal(HashMap::<String, Vec<ChatMessage>>::new);
 
+    let channel_messages = use_memo(move || {
+        if let Some(msgs) = messages.get(&active_channel()) {
+            msgs.cloned()
+        } else {
+            vec![]
+        }
+    });
+
     use_future(
         move || async move { client_connect_loop(connected, active_channel, messages).await },
     );
-
-    use_effect(move || {
-        // run this effect every time messages update
-        let _messages = messages.read();
-
-        // todo add check if should autoscroll or not!
-        document::eval(r#"document.getElementById("page-anchor").scrollIntoView()"#);
-    });
 
     rsx! {
         div {
@@ -247,7 +247,7 @@ pub fn Home() -> Element {
                     flex_grow: "1",
                     justify_content: "center",
                     align_items: "center",
-                    MessageHistory { messages: messages.get(&active_channel()).map(|m| m.clone()).unwrap_or_default() }
+                    MessageHistory { messages: channel_messages }
                     div { flex: "1" }
                     MessageBox {
                         disabled: false,
