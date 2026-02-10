@@ -56,3 +56,9 @@ dx serve
 ## Misc Notes
 
 - Multiple messages can be sent in a single message separated by newline `\n`?
+
+## TODO
+
+- Add dividers for message history view that display:
+  - When date changes
+  - When topic changes
