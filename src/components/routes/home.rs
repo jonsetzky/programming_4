@@ -45,6 +45,7 @@ async fn client_connect_loop(
     mut connected: Signal<bool>,
     active_channel: Signal<String>,
     messages: Signal<HashMap<String, Vec<ChatMessage>>>,
+    topic: Signal<String>,
 ) {
     let state = use_context::<AppState>();
     let mut connection_notification = state.connection_notification;
@@ -74,6 +75,7 @@ async fn client_connect_loop(
                 _client,
                 active_channel,
                 add_message_to_messages(messages, active_channel),
+                topic,
             )
             .await;
             let _ = tx.send(()); // notify when read loop exits
@@ -95,6 +97,7 @@ async fn read_loop(
     mut client: TcpChatClient,
     mut active_channel: Signal<String>,
     mut add_message: impl FnMut(ChatMessage),
+    mut topic: Signal<String>,
 ) {
     loop {
         let packet = match client.recv().await {
@@ -125,9 +128,9 @@ async fn read_loop(
                         .collect(),
                 );
             }
-            Packet::ChangeTopic { topic } => {
-                //todo handle
-                println!("NEW TOPIC: {}", topic);
+            Packet::ChangeTopic { topic: new_topic } => {
+                println!("NEW TOPIC: {}", new_topic);
+                topic.set(new_topic);
             }
             Packet::Chat(message) => {
                 println!("MESSAGE: [{}]: {}", message.user, message.message);
@@ -190,6 +193,7 @@ pub fn Home() -> Element {
 
     let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
+    let topic = use_signal(|| String::from(""));
 
     let messages: Signal<HashMap<String, Vec<ChatMessage>>> =
         use_signal(HashMap::<String, Vec<ChatMessage>>::new);
@@ -202,9 +206,9 @@ pub fn Home() -> Element {
         }
     });
 
-    use_future(
-        move || async move { client_connect_loop(connected, active_channel, messages).await },
-    );
+    use_future(move || async move {
+        client_connect_loop(connected, active_channel, messages, topic).await
+    });
 
     rsx! {
         div {
@@ -250,6 +254,7 @@ pub fn Home() -> Element {
                     flex_grow: "1",
                     justify_content: "center",
                     align_items: "center",
+                    p { "{topic}" }
                     MessageHistory { messages: channel_messages }
                     div { flex: "1" }
                     MessageBox {
