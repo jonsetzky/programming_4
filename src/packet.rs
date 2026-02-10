@@ -56,7 +56,7 @@ pub enum Packet {
 }
 
 impl Packet {
-    pub fn into_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         let mut data = serde_json::to_value(&self).expect("coudln't convert packet into json");
 
         data["type"] = match self {
@@ -233,7 +233,7 @@ mod tests {
             String::from("\"sent\":1770656066123"),
         ];
 
-        let mut ser_val = String::from_utf8(val.into_bytes()).unwrap();
+        let mut ser_val = String::from_utf8(val.to_bytes()).unwrap();
 
         for part in parts {
             assert_ne!(None, ser_val.find(&part));
@@ -261,7 +261,7 @@ mod tests {
             .expect("timestamp doesn't fint i64"),
         });
 
-        let bytes = original.into_bytes();
+        let bytes = original.to_bytes();
         let str = String::from_utf8(bytes.clone()).unwrap();
         println!("Data: {str}");
         let packet = Packet::from_bytes(&bytes);

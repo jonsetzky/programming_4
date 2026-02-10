@@ -33,7 +33,7 @@ impl TcpChatClient {
     }
 
     pub async fn send(&self, packet: Packet) -> io::Result<usize> {
-        let mut data = packet.into_bytes();
+        let mut data = packet.to_bytes();
         data.push('\n' as u8);
 
         // println!("send(): {}", String::from_utf8(data.clone()).unwrap());

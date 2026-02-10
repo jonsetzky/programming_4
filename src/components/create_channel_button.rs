@@ -65,7 +65,7 @@ pub fn CreateChannelButton() -> Element {
                                     println!("created new channel {}", new_channel.clone());
 
                                     if !channels().contains(&new_channel) {
-                                        consume_context::<AppState>().channels.write().push(new_channel);
+                                        channels.write().push(new_channel);
                                     }
                                     value.set(String::from(""));
                                     show_input.set(false);

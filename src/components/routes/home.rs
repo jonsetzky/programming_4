@@ -13,9 +13,7 @@ lazy_static! {
 
 use crate::{
     AppState,
-    components::{
-        Button, ChannelButton, CreateChannelButton, MessageBox, MessageHistory, UserPanel,
-    },
+    components::{ChannelButton, CreateChannelButton, MessageBox, MessageHistory, UserPanel},
     packet::{ChatMessage, Packet},
     route::Route,
     tcp_chat_client::TcpChatClient,
@@ -163,7 +161,7 @@ async fn write_loop(client: TcpChatClient, mut outgoing_rx: Receiver<Packet>) {
         };
         println!(
             "sent packet {}",
-            String::from_utf8(packet.into_bytes()).unwrap()
+            String::from_utf8(packet.to_bytes()).unwrap()
         );
 
         match client.send(packet).await {
@@ -187,7 +185,7 @@ pub fn Home() -> Element {
     let state = use_context::<AppState>();
     let connected = use_signal(|| false);
 
-    let mut channels = state.channels;
+    let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
 
     let messages: Signal<HashMap<String, Vec<ChatMessage>>> =

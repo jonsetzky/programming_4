@@ -23,7 +23,7 @@ struct AppState {
     username: Signal<String>,
     address: Signal<String>,
     connection_notification: Signal<String>,
-    channels: Signal<Vec<String>>,
+    channels: Signal<Vec<String>>, // todo could use Set for this instead?
     packet_sender: Signal<Option<Sender<Packet>>>,
 }
 
@@ -35,14 +35,14 @@ impl AppState {
     pub fn new() -> AppState {
         let username = String::from("");
         let packet_builder = PacketBuilder::new(username.clone());
-        return AppState {
+        AppState {
             packet_builder,
             username: Signal::new(username),
             address: Signal::new(String::from("127.0.0.1:10000")),
             connection_notification: Signal::new(String::from("")),
             channels: Signal::new(vec![]),
             packet_sender: Signal::new(None),
-        };
+        }
     }
 }
 
@@ -52,7 +52,7 @@ static MAIN_CSS: Asset = asset!("/assets/main.css");
 // todo use embedded font?
 #[component]
 fn App() -> Element {
-    use_context_provider(|| AppState::new());
+    use_context_provider(AppState::new);
 
     rsx! {
         document::Stylesheet { href: RESET_CSS }
