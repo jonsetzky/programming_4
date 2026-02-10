@@ -56,6 +56,10 @@ impl PacketBuilder {
             sent: timestamp,
         })
     }
+    pub fn set_topic(&self, new_topic: String) -> Packet {
+        Packet::ChangeTopic { topic: new_topic }
+    }
+
     #[allow(unused)]
     pub fn list_channels(&self) -> Packet {
         Packet::ListChannels { channels: None }

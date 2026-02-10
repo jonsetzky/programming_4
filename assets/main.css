@@ -7,7 +7,7 @@
 
 input {
   color: #ffffff;
-  width: 100%;
+  /* width: 100%; */
   height: 2.3rem;
   border: none;
   padding-left: 8px;
@@ -17,6 +17,22 @@ input {
   font-size: 16px;
   font-weight: 400;
   border-radius: 6px;
+}
+input.topic-editor {
+  color: "#ddd";
+  font-weight: 200;
+  font-size: 14px;
+  width: unset;
+  height: 100%;
+  padding: 0px 10px 0px 10px;
+  border-radius: 6px 0px 0px 6px;
+}
+
+button.low-profile {
+  color: #ddd;
+  /* width: auto; */
+}
+button.low-profile:hover {
 }
 
 textarea {

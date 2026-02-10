@@ -15,7 +15,8 @@ use crate::{
     AppState,
     components::{
         channel_button::ChannelButton, create_channel_button::CreateChannelButton,
-        message_box::MessageBox, message_history::MessageHistory, user_panel::UserPanel,
+        message_box::MessageBox, message_history::MessageHistory, topic_editor::TopicEditor,
+        user_panel::UserPanel,
     },
     packet::{ChatMessage, Packet},
     route::Route,
@@ -245,24 +246,39 @@ pub fn Home() -> Element {
                 hr { align_self: "center" }
                 UserPanel { connected, username: state.username }
             }
-            div { display: "flex", justify_content: "center", width: "100%",
+            div {
+                display: "flex",
+                justify_content: "center",
+                width: "100%",
+                height: "100%",
                 div {
+                    // topiceditor requires this as it has an absolute child
+                    // could possibly be moved into the parent div in TopicEditor??
+                    position: "relative",
                     display: "flex",
                     flex_direction: "column",
-                    max_width: "36rem",
-                    height: "100%",
-                    flex_grow: "1",
-                    justify_content: "center",
+                    flex: "1",
+                    min_height: "0",
                     align_items: "center",
-                    p { "{topic}" }
-                    MessageHistory { messages: channel_messages }
-                    div { flex: "1" }
-                    MessageBox {
-                        disabled: false,
-                        add_message: add_message_to_messages(messages, active_channel),
-                        active_channel,
+                    TopicEditor { topic }
+                    div {
+                        display: "flex",
+                        flex_direction: "column",
+                        width: "36rem",
+                        flex: "1",
+                        flex_shrink: "0",
+                        min_height: "0",
+                        justify_content: "center",
+                        align_items: "center",
+                        MessageHistory { messages: channel_messages }
+                        div { flex: "1" }
+                        MessageBox {
+                            disabled: false,
+                            add_message: add_message_to_messages(messages, active_channel),
+                            active_channel,
+                        }
+                        div { height: "0.4rem" }
                     }
-                    div { height: "0.4rem" }
                 }
             }
         }

@@ -27,6 +27,11 @@ pub fn InputField(
             }
             input {
                 r#type: "text",
+                style: "width: 100%",
+                // lower level than oninput, which allows preventing the modification of the text
+                // todo this could be used instead
+                // onkeydown: move |evt| {
+                // },
                 oninput: move |event| {
                     let newVal = event.value();
                     let Some(re) = re.as_ref() else {

@@ -7,4 +7,5 @@ pub mod message_history;
 pub mod notification;
 pub mod routes;
 pub mod tooltip;
+pub mod topic_editor;
 pub mod user_panel;
