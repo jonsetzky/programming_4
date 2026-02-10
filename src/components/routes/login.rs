@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::{
     AppState,
-    components::{Button, InputField},
+    components::{button::Button, input_field::InputField},
     route::Route,
 };
 

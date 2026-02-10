@@ -1,5 +1,5 @@
 use crate::components::{
-    Button,
+    button::Button,
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
 };
 use dioxus::prelude::*;

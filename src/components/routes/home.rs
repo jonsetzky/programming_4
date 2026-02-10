@@ -13,7 +13,10 @@ lazy_static! {
 
 use crate::{
     AppState,
-    components::{ChannelButton, CreateChannelButton, MessageBox, MessageHistory, UserPanel},
+    components::{
+        channel_button::ChannelButton, create_channel_button::CreateChannelButton,
+        message_box::MessageBox, message_history::MessageHistory, user_panel::UserPanel,
+    },
     packet::{ChatMessage, Packet},
     route::Route,
     tcp_chat_client::TcpChatClient,

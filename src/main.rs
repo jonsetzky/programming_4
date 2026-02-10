@@ -6,8 +6,6 @@ use dioxus::prelude::*;
 use dioxus_desktop::{Config, LogicalSize, WindowBuilder};
 
 mod components;
-use components::*;
-
 mod packet;
 mod packet_builder;
 mod tcp_chat_client;
@@ -16,7 +14,10 @@ mod route;
 
 use tokio::sync::mpsc::Sender;
 
-use crate::{packet::Packet, packet_builder::PacketBuilder, route::Route};
+use crate::{
+    components::notification::Notification, packet::Packet, packet_builder::PacketBuilder,
+    route::Route,
+};
 #[derive(Debug, Store, Clone)]
 struct AppState {
     packet_builder: PacketBuilder,

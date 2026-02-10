@@ -1,5 +1,5 @@
 use crate::packet::Packet;
-use crate::{AppState, components::Button};
+use crate::{AppState, components::button::Button};
 use dioxus::prelude::*;
 
 #[component]
