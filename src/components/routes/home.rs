@@ -27,7 +27,7 @@ pub fn get_channel_name(name_with_user_count: String) -> String {
 pub fn add_message_to_messages(
     mut messages: Signal<HashMap<String, Vec<ChatMessage>>>,
     active_channel: Signal<String>,
-) -> impl FnMut(ChatMessage) -> () {
+) -> impl FnMut(ChatMessage) {
     move |message| {
         let mut messages = messages.write();
         let Some(existing_channel) = messages.get_mut(&active_channel()) else {
@@ -91,7 +91,7 @@ async fn client_connect_loop(
 async fn read_loop(
     mut client: TcpChatClient,
     mut active_channel: Signal<String>,
-    mut add_message: impl FnMut(ChatMessage) -> (),
+    mut add_message: impl FnMut(ChatMessage),
 ) {
     loop {
         let packet = match client.recv().await {
@@ -189,7 +189,7 @@ pub fn Home() -> Element {
     let active_channel = use_signal(|| String::from(""));
 
     let messages: Signal<HashMap<String, Vec<ChatMessage>>> =
-        use_signal(|| HashMap::<String, Vec<ChatMessage>>::new());
+        use_signal(HashMap::<String, Vec<ChatMessage>>::new);
 
     use_future(
         move || async move { client_connect_loop(connected, active_channel, messages).await },

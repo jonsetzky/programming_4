@@ -13,7 +13,9 @@ pub fn Button(
             class,
             r#type: "text",
             onclick: move |_evt| {
-                onclick.map(|f| f(()));
+                if let Some(f) = onclick {
+                    f(())
+                }
             },
             "{label}"
         }

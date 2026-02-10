@@ -7,18 +7,20 @@ use uuid::Uuid;
 
 use crate::packet::{ChatMessage, Packet};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PacketBuilder {
     nickname: Arc<Mutex<String>>,
 }
 
-impl PacketBuilder {
-    pub fn clone(&self) -> PacketBuilder {
+impl Clone for PacketBuilder {
+    fn clone(&self) -> Self {
         PacketBuilder {
             nickname: self.nickname.clone(),
         }
     }
+}
 
+impl PacketBuilder {
     #[allow(unused)]
     pub fn get_nickname(&self) -> String {
         let nick = self.nickname.lock().unwrap();

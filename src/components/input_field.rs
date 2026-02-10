@@ -10,9 +10,8 @@ pub fn InputField(
     legal_regex: Option<String>,
     onblur: Option<Callback<Event<FocusData>>>,
 ) -> Element {
-    let re = use_hook(|| match legal_regex {
-        Some(regex) => Some(Regex::new(regex.as_str()).expect("failed to build regex")),
-        None => None,
+    let re = use_hook(|| {
+        legal_regex.map(|regex| Regex::new(regex.as_str()).expect("failed to build regex"))
     });
 
     rsx! {

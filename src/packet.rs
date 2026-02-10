@@ -57,7 +57,7 @@ pub enum Packet {
 
 impl Packet {
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut data = serde_json::to_value(&self).expect("coudln't convert packet into json");
+        let mut data = serde_json::to_value(self).expect("coudln't convert packet into json");
 
         data["type"] = match self {
             Packet::Error { .. } => json!(-1),

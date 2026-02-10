@@ -88,7 +88,7 @@ pub fn MessageBox(
                     align_items: "flex-end",
                     justify_content: "center",
 
-                    disabled: disabled || message.read().len() == 0,
+                    disabled: disabled || message.read().is_empty(),
                     onclick: move |_| {
                         match packet_sender() {
                             Some(packet_sender) => {

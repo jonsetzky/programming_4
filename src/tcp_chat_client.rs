@@ -9,21 +9,23 @@ pub struct TcpChatClient {
     reader: BufReader<TcpStream>,
 }
 
-impl TcpChatClient {
-    pub fn clone(&self) -> TcpChatClient {
+impl Clone for TcpChatClient {
+    fn clone(&self) -> Self {
         TcpChatClient {
             stream: self.stream.clone(),
             reader: BufReader::new(self.stream.clone()),
         }
     }
+}
 
+impl TcpChatClient {
     pub async fn connect(addr: Option<&str>) -> io::Result<TcpChatClient> {
         let addr = addr.unwrap_or("127.0.0.1:10000");
 
         match TcpStream::connect(&addr).await {
             Err(err) => {
                 println!("Failed to connect to {}", addr);
-                return Err(err);
+                Err(err)
             }
             Ok(stream) => Ok(TcpChatClient {
                 reader: BufReader::new(stream.clone()),
@@ -34,7 +36,7 @@ impl TcpChatClient {
 
     pub async fn send(&self, packet: Packet) -> io::Result<usize> {
         let mut data = packet.to_bytes();
-        data.push('\n' as u8);
+        data.push(b'\n');
 
         // println!("send(): {}", String::from_utf8(data.clone()).unwrap());
 
