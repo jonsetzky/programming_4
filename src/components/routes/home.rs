@@ -153,7 +153,6 @@ async fn read_loop(
                 }
             }
             Packet::JoinChannel { channel: _ } => {
-                // todo handle
                 println!("received JoinChannel packet from server. weird..")
             }
         }

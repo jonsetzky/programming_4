@@ -59,6 +59,9 @@ dx serve
 
 ## TODO
 
-- Add dividers for message history view that display:
+- Add dividers for message history view. Related files: `src/components/message_history.rs` and `src/components/routes/home.rs` They should display:
   - When date changes
   - When topic changes
+- Use onkeydown for login input field as it would make writing experience more smooth. Related file: `src/components/input_field.rs`.
+- Use an embedded font instead of fetching it from Google API. Not sure if its cached or fetced every time the app is opened? Related file: `src/main.rs`.
+- Channels list in AppState (`src/main.rs`) could use a set implementation instead of Vec.

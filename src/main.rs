@@ -24,7 +24,7 @@ struct AppState {
     username: Signal<String>,
     address: Signal<String>,
     connection_notification: Signal<String>,
-    channels: Signal<Vec<String>>, // todo could use Set for this instead?
+    channels: Signal<Vec<String>>,
     packet_sender: Signal<Option<Sender<Packet>>>,
 }
 
@@ -50,7 +50,6 @@ impl AppState {
 static RESET_CSS: Asset = asset!("/assets/reset.css");
 static MAIN_CSS: Asset = asset!("/assets/main.css");
 
-// todo use embedded font?
 #[component]
 fn App() -> Element {
     use_context_provider(AppState::new);

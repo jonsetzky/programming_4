@@ -29,7 +29,7 @@ pub fn InputField(
                 r#type: "text",
                 style: "width: 100%",
                 // lower level than oninput, which allows preventing the modification of the text
-                // todo this could be used instead
+                // this could be used instead
                 // onkeydown: move |evt| {
                 // },
                 oninput: move |event| {
