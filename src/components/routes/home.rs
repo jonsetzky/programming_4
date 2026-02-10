@@ -15,8 +15,8 @@ use crate::{
     AppState,
     components::{
         channel_button::ChannelButton, create_channel_button::CreateChannelButton,
-        message_box::MessageBox, message_history::MessageHistory, topic_editor::TopicEditor,
-        user_panel::UserPanel,
+        message_box::MessageBox, message_history::MessageHistory, popup::Popup,
+        topic_editor::TopicEditor, user_panel::UserPanel,
     },
     packet::{ChatMessage, Packet},
     route::Route,
@@ -192,6 +192,8 @@ pub fn Home() -> Element {
     let state = use_context::<AppState>();
     let connected = use_signal(|| false);
 
+    let show_initial_popup = use_signal(|| true);
+
     let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
     let topic = use_signal(|| String::from(""));
@@ -212,6 +214,15 @@ pub fn Home() -> Element {
     });
 
     rsx! {
+        if show_initial_popup() {
+            Popup { show: show_initial_popup,
+                p { font_size: "32px", "Important notice" }
+                div { height: "2rem" }
+                p { font_size: "14px",
+                    "Messages can only be received and viewed during the session. Logging out will erase all messages locally."
+                }
+            }
+        }
         div {
             display: "flex",
             flex_direction: "row",
