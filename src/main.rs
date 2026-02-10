@@ -89,9 +89,9 @@ fn main() {
                     .with_maximizable(false)
                     // .with_decorations(false)
                     .with_always_on_top(false)
-                    .with_inner_size(LogicalSize {width: 1280, height: 720})
+                    .with_inner_size(LogicalSize {width: 900, height: 720})
                     .with_title("Neighbor Chat")
-                    .with_min_inner_size(LogicalSize {width: 804, height: 520})
+                    .with_min_inner_size(LogicalSize {width: 900, height: 520})
            )
         })
         .launch(App);
