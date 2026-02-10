@@ -12,3 +12,4 @@ rustflags = [
 #rustc-wrapper = "/path/to/sccache"
 # this however should be placed in global config (~/.cargo/config.toml)
 # to avoid committing it into VCS
+# alternatively it can be provided using env variable RUSTC_WRAPPER
