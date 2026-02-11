@@ -189,6 +189,13 @@ button.logout-button:active {
   animation: moveLeft 0.5s cubic-bezier(0.3, 0.7, 0.46, 1) forwards;
 }
 
+div.decoration-button:hover {
+  background-color: #303030;
+}
+div.decoration-exit-button:hover {
+  background-color: #922222;
+}
+
 @keyframes moveLeft {
   from {
     transform: translateX(0);

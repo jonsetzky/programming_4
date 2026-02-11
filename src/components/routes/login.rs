@@ -17,7 +17,7 @@ pub fn Login() -> Element {
     rsx! {
         div {
             width: "32rem",
-            height: "100vh",
+            height: "100%",
             text_align: "center",
             vertical_align: "middle",
             margin_left: "auto",

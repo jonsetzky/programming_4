@@ -19,7 +19,7 @@ pub fn TopicEditor(topic: Signal<String>) -> Element {
             justify_content: "center",
             align_items: "center",
             width: "100%",
-            height: "1.5rem",
+            height: "2rem",
             vertical_align: "middle",
             background_color: "#1d1d1d",
             button {
@@ -28,9 +28,10 @@ pub fn TopicEditor(topic: Signal<String>) -> Element {
                 class: "low-profile",
                 color: "#ddd",
                 flex: "1",
+                height: "2rem",
                 font_size: "14px",
                 font_weight: "200",
-                padding: "0px 4px 0px 4px", // trbl
+                // padding: "0px 4px 0px 4px", // trbl
                 border_radius: "0px",
                 r#type: "text",
                 autofocus: true,

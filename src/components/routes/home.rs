@@ -228,13 +228,13 @@ pub fn Home() -> Element {
         div {
             display: "flex",
             flex_direction: "row",
-            width: "100vw",
-            height: "100vh",
+            width: "100%",
+            height: "100%",
             justify_items: "start",
             div {
                 display: "flex",
                 flex_direction: "column",
-                height: "100vh",
+                height: "100%",
                 width: "20rem",
                 background_color: "#262626",
                 flex_shrink: "0",
@@ -266,6 +266,7 @@ pub fn Home() -> Element {
                     flex: "1",
                     min_height: "0",
                     align_items: "center",
+                    justify_content: "center",
                     TopicEditor { topic }
                     div {
                         display: "flex",
