@@ -65,3 +65,5 @@ dx serve
 - Use onkeydown for login input field as it would make writing experience more smooth. Related file: `src/components/input_field.rs`.
 - Use an embedded font instead of fetching it from Google API. Not sure if its cached or fetced every time the app is opened? Related file: `src/main.rs`.
 - Channels list in AppState (`src/main.rs`) could use a set implementation instead of Vec.
+- Refresh button for channels as they're not always up to date.
+  - If some implementation for updating channel information is created, showing channel user count would be possible.
