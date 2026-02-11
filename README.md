@@ -34,9 +34,11 @@ java -jar target/ChatServer-0.0.1-SNAPSHOT-jar-with-dependencies.jar chatserver.
 
 ## Full dev setup
 
+
 ```bash
 cargo install cargo-binstall
 cargo binstall dioxus-cli
+rustup target add wasm32-unknown-unknown
 ```
 
 ### Running the application
