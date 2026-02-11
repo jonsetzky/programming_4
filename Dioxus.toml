@@ -1,0 +1,26 @@
+[application]
+
+[bundle]
+identifier = "jonsetzky"
+publisher = "jonsetzky"
+icon = ["icons/icon.ico"]
+
+[web.app]
+
+# HTML title tag content
+title = "Neighbor Chat"
+
+# include `assets` in web platform
+[web.resource]
+
+# Additional CSS style files
+style = []
+
+# Additional JavaScript files
+script = []
+
+[web.resource.dev]
+
+# Javascript code file
+# serve: [dev-server] only
+script = []

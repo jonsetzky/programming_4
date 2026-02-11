@@ -1,0 +1,99 @@
+#![feature(lock_value_accessors)]
+extern crate directories;
+use std::fs;
+
+use dioxus::prelude::*;
+use dioxus_desktop::{Config, LogicalSize, WindowBuilder};
+
+mod components;
+mod packet;
+mod packet_builder;
+mod tcp_chat_client;
+
+mod route;
+
+use tokio::sync::mpsc::Sender;
+
+use crate::{
+    components::notification::Notification, packet::Packet, packet_builder::PacketBuilder,
+    route::Route,
+};
+#[derive(Debug, Store, Clone)]
+struct AppState {
+    packet_builder: PacketBuilder,
+    username: Signal<String>,
+    address: Signal<String>,
+    connection_notification: Signal<String>,
+    channels: Signal<Vec<String>>,
+    packet_sender: Signal<Option<Sender<Packet>>>,
+}
+
+impl AppState {
+    pub fn packet_builder(&self) -> PacketBuilder {
+        self.packet_builder.clone()
+    }
+
+    pub fn new() -> AppState {
+        let username = String::from("");
+        let packet_builder = PacketBuilder::new(username.clone());
+        AppState {
+            packet_builder,
+            username: Signal::new(username),
+            address: Signal::new(String::from("127.0.0.1:10000")),
+            connection_notification: Signal::new(String::from("")),
+            channels: Signal::new(vec![]),
+            packet_sender: Signal::new(None),
+        }
+    }
+}
+
+static RESET_CSS: Asset = asset!("/assets/reset.css");
+static MAIN_CSS: Asset = asset!("/assets/main.css");
+
+#[component]
+fn App() -> Element {
+    use_context_provider(AppState::new);
+
+    rsx! {
+        document::Stylesheet { href: RESET_CSS }
+        document::Stylesheet { href: MAIN_CSS }
+        document::Stylesheet { href: "https://fonts.googleapis.com/css?family=Inter" }
+        Notification {}
+        div {
+            background_color: "#171717",
+            color: "#EEEEEE",
+            font_family: "Inter",
+            width: "100vw",
+            height: "100vh",
+            margin: "0",
+            Router::<Route> {}
+        }
+    }
+}
+
+fn main() {
+    if let Err(err) = fs::create_dir_all(neighbor_chat::data_dir()) {
+        panic!("error creating data directory {}", err);
+    } else {
+        println!(
+            "Data directory: {}",
+            neighbor_chat::data_dir().to_str().unwrap()
+        );
+    }
+
+    dioxus::LaunchBuilder::new()
+        .with_cfg(desktop! {
+           Config::new().with_window(
+               WindowBuilder::new()
+                    .with_maximizable(false)
+                    // .with_decorations(false)
+                    .with_always_on_top(false)
+                    .with_inner_size(LogicalSize {width: 900, height: 720})
+                    .with_title("Neighbor Chat")
+                    .with_min_inner_size(LogicalSize {width: 900, height: 520})
+           )
+        })
+        .launch(App);
+
+    println!("Launched app!");
+}

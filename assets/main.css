@@ -1,0 +1,229 @@
+* {
+  /* make everything unselectable by default */
+  user-select: none;
+  font-family: Inter;
+  color: #fff;
+}
+
+input {
+  color: #ffffff;
+  /* width: 100%; */
+  height: 2.3rem;
+  border: none;
+  padding-left: 8px;
+  padding-right: 8px;
+  outline: none;
+  background-color: #1d1d1d;
+  font-size: 16px;
+  font-weight: 400;
+  border-radius: 6px;
+}
+input.topic-editor {
+  color: "#ddd";
+  font-weight: 200;
+  font-size: 14px;
+  width: unset;
+  height: 100%;
+  padding: 0px 10px 0px 10px;
+  border-radius: 6px 0px 0px 6px;
+}
+
+button.low-profile {
+  color: #ddd;
+  /* width: auto; */
+}
+button.low-profile:hover {
+}
+
+textarea {
+  color: #ffffff;
+  width: 100%;
+  /* min-height: 2.3rem; */
+  /* height: 2.3rem; */
+  border: none;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  outline: none;
+  background-color: #1d1d1d;
+  font-size: 16px;
+  font-weight: 400;
+  border-radius: 6px;
+  field-sizing: content;
+  resize: none;
+}
+
+input::placeholder {
+  color: #727272;
+}
+
+button {
+  user-select: none;
+  background-color: #1d1d1d;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  min-width: 9rem;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.3rem;
+  border: none;
+  padding-left: 8px;
+  padding-right: 8px;
+  outline: none;
+  font-size: 16px;
+  font-weight: 400;
+  border-radius: 6px;
+  color: #fff;
+  user-select: none;
+}
+
+button:not(:disabled):hover {
+  background-color: #363636;
+}
+
+button:active {
+  background-color: #191919;
+}
+
+button.neighborhood-button-current {
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  border-radius: 0px;
+  background-color: #161616;
+  color: #fff;
+}
+button.neighborhood-button {
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  border-radius: 0px;
+  background-color: #262626;
+  color: #ddd;
+}
+button.neighborhood-button:hover {
+  background-color: #363636;
+}
+button.neighborhood-button:active {
+  background-color: #191919;
+}
+
+button.add-neighborhood-button {
+  font-size: 14px;
+  width: 100%;
+  text-align: center;
+  border-radius: 0px;
+  background-color: #262626;
+  color: #727272;
+  font-weight: 900;
+}
+button.add-neighborhood-button:hover {
+  background-color: #363636;
+}
+button.add-neighborhood-button:active {
+  background-color: #191919;
+}
+
+h1,
+h2 {
+  letter-spacing: 1.5px;
+  font-weight: 900;
+}
+
+hr {
+  border: none;
+  height: 1.5px;
+  width: 90%;
+  background-color: #3a3a3a;
+  margin: 0px;
+}
+
+button.user-button {
+  padding: 8px 14px;
+  min-width: unset;
+  width: auto;
+  font-size: 14px;
+  text-align: center;
+  border-radius: 0px;
+  background-color: #262626;
+  color: #fff;
+  letter-spacing: 1px;
+  font-weight: 900;
+  margin-right: auto;
+  border-radius: 6px;
+  margin-left: 4px;
+  margin-bottom: 4px;
+}
+button.user-button:hover {
+  background-color: #363636;
+}
+button.user-button:active {
+  background-color: #191919;
+}
+
+.notification {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  width: 36rem;
+  height: 3.3rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background-color: #7b2323;
+  border-radius: 0px 0px 6px 6px;
+  font-family: Inter;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.notification.hide {
+  animation: slideUp 0.3s ease-in forwards;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f100;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #363636;
+  border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

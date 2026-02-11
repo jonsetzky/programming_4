@@ -1,0 +1,25 @@
+[package]
+name = "neighbor_chat"
+version = "0.1.1"
+edition = "2024"
+
+[dependencies]
+chrono = { version = "0.4.42", features = ["serde"] }
+dioxus = { version = "0.7.0", features = ["router"] }
+dioxus-desktop = { version = "0.7.2" }
+dioxus-stores = "0.7.2"
+directories = "6.0.0"
+serde = "1.0.228"
+serde_json = "1.0.145"
+smol = "2.0.2"
+tokio = { version = "1.48.0", features = ["net", "sync"] }
+uuid = { version = "1.19.0", features = ["v4", "serde"] }
+regex = "1.12.2"
+dioxus-logger = "0.7.3"
+serde_with = "3.16.1"
+dioxus-primitives = { git = "https://github.com/DioxusLabs/components", version = "0.0.1", default-features = false }
+lazy_static = "1.5.0"
+
+[features]
+default = ["desktop"]
+desktop = ["dioxus/desktop"] # This feature is enabled during desktop builds
