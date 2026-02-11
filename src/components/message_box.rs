@@ -59,11 +59,20 @@ pub fn MessageBox(
                         message.set(event.value());
                     },
                     onkeypress: move |event| {
-                        if event.key() == Key::Enter {
+                        if event.key() == Key::Enter && !event.modifiers().shift() {
+                            if event.modifiers().shift() {
+                                return;
+                            }
                             event.prevent_default();
+                            let msg = message();
+
+                            // dont send message if its empty or consist only of whitespace characters
+                            if msg.trim().is_empty() {
+                                return;
+                            }
                             match packet_sender() {
                                 Some(packet_sender) => {
-                                    let msg = send_message(packet_sender, message());
+                                    let msg = send_message(packet_sender, msg);
                                     add_message(msg);
                                     message.set(String::from(""));
                                 }
@@ -90,9 +99,16 @@ pub fn MessageBox(
 
                     disabled: disabled || message.read().is_empty(),
                     onclick: move |_| {
+                        let msg = message();
+
+                        // dont send message if its empty or consist only of whitespace characters
+                        if msg.trim().is_empty() {
+                            return;
+                        }
+
                         match packet_sender() {
                             Some(packet_sender) => {
-                                let msg = send_message(packet_sender, message());
+                                let msg = send_message(packet_sender, msg);
                                 add_message(msg);
                                 message.set(String::from(""));
                             }
