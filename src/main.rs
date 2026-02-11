@@ -160,7 +160,13 @@ fn App() -> Element {
                 z_index: 4,
                 onmousedown: move |_| window.clone().drag(),
             }
-            div { flex: "1", margin: "0", Router::<Route> {} }
+            div {
+                flex: "1",
+                margin: "0",
+                height: "100%",
+                min_height: "0",
+                Router::<Route> {}
+            }
         }
     }
 }

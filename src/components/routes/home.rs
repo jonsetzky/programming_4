@@ -230,11 +230,13 @@ pub fn Home() -> Element {
             flex_direction: "row",
             width: "100%",
             height: "100%",
+            min_height: "0",
             justify_items: "start",
             div {
                 display: "flex",
                 flex_direction: "column",
                 height: "100%",
+                min_height: "0",
                 width: "20rem",
                 background_color: "#262626",
                 flex_shrink: "0",
@@ -255,6 +257,7 @@ pub fn Home() -> Element {
             div {
                 display: "flex",
                 justify_content: "center",
+                min_height: "0",
                 width: "100%",
                 height: "100%",
                 div {
