@@ -4,7 +4,7 @@
 # might require 
 rustflags = [
     "-C", "link-arg=-fuse-ld=lld", 
-    "-Z", "threads=8",
+    #"-Z", "threads=8", # this works only on nightly compiler
     "-A", "non_snake_case",
     "-Z", "macro-backtrace"]
 
