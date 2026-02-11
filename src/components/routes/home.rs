@@ -189,7 +189,7 @@ pub fn Home() -> Element {
     let state = use_context::<AppState>();
     let connected = use_signal(|| false);
 
-    let show_initial_popup = use_signal(|| true);
+    let mut show_initial_popup = use_signal(|| true);
 
     let channels = state.channels;
     let active_channel = use_signal(|| String::from(""));
@@ -211,12 +211,19 @@ pub fn Home() -> Element {
     });
 
     rsx! {
-        if show_initial_popup() {
-            Popup { show: show_initial_popup,
-                p { font_size: "32px", "Important notice" }
-                div { height: "2rem" }
-                p { font_size: "14px",
-                    "Messages can only be received and viewed during the session. Logging out will erase all messages locally."
+        Popup { show: show_initial_popup, background_closes: false,
+            p { font_size: "32px", "Important notice" }
+            div { height: "2rem" }
+            p { font_size: "14px",
+                "Messages can only be received and viewed during the session. Logging out will erase all messages locally."
+            }
+            div { flex: "1" }
+            div { display: "flex", flex_direction: "row", width: "100%",
+                div { flex: "1" }
+                button {
+                    min_width: "6rem",
+                    onclick: move |_| show_initial_popup.set(false),
+                    "OK"
                 }
             }
         }
