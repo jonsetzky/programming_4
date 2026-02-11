@@ -163,6 +163,29 @@ button.user-button:active {
   background-color: #191919;
 }
 
+button.logout-button {
+  padding: 8px 14px;
+  min-width: unset;
+  width: auto;
+  font-size: 14px;
+  text-align: center;
+  border-radius: 0px;
+  background-color: #7b2323;
+  color: #fff;
+  letter-spacing: 1px;
+  font-weight: 900;
+  margin-right: auto;
+  border-radius: 6px;
+  margin: 6px;
+}
+button.logout-button:hover {
+  background-color: #aa2020;
+  color: #000;
+}
+button.logout-button:active {
+  background-color: #7a0000;
+}
+
 .notification {
   position: absolute;
   left: 50%;

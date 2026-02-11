@@ -11,7 +11,6 @@ pub fn Button(
         button {
             disabled,
             class,
-            r#type: "text",
             onclick: move |_evt| {
                 if let Some(f) = onclick {
                     f(())
