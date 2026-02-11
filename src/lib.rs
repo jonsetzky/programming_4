@@ -1,4 +1,3 @@
-#![feature(lock_value_accessors)]
 use std::path::Path;
 use std::sync::LazyLock;
 
