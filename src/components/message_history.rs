@@ -130,8 +130,6 @@ pub fn MessageHistory(messages: Memo<Vec<ChatMessage>>) -> Element {
                 scroll_to_anchor();
             }
         });
-
-        println!("updating messages");
     });
 
     rsx! {

@@ -160,7 +160,6 @@ async fn read_loop(
 }
 
 async fn write_loop(client: TcpChatClient, mut outgoing_rx: Receiver<Packet>) {
-    println!("starting write loop");
     loop {
         let Some(packet) = outgoing_rx.recv().await else {
             break;
@@ -182,7 +181,6 @@ async fn write_loop(client: TcpChatClient, mut outgoing_rx: Receiver<Packet>) {
             Ok(packet) => packet,
         };
     }
-    println!("write loop exited")
 }
 
 #[component]
