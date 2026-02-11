@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::SystemTime,
-};
+use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
 use uuid::Uuid;
@@ -45,7 +42,7 @@ impl PacketBuilder {
             id: Uuid::new_v4(),
             inReplyTo: None,
             message,
-            user: self.nickname.get_cloned().unwrap(),
+            user: self.get_nickname(),
             directMessageTo: None,
             sent: timestamp,
         })

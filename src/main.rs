@@ -1,4 +1,3 @@
-#![feature(lock_value_accessors)]
 extern crate directories;
 use std::fs;
 
