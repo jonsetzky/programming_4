@@ -45,7 +45,7 @@ Once setup is done, the application can be started in dev mode/demoed by running
 command in the project's directory:
 
 ```bash
-dx serve
+dx run
 ```
 
 > Note that `cargo run` will not work as the application doesn't have permissions to load assets from the assets folder.
