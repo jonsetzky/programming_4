@@ -209,7 +209,7 @@ div.decoration-exit-button:hover {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: 0;
+  top: 24px;
   width: 36rem;
   height: 3.3rem;
   text-align: center;
