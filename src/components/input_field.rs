@@ -9,6 +9,7 @@ pub fn InputField(
     value: Signal<String>,
     legal_regex: Option<String>,
     onblur: Option<Callback<Event<FocusData>>>,
+    onillegal: Option<EventHandler>,
 ) -> Element {
     let re = use_hook(|| {
         legal_regex.map(|regex| Regex::new(regex.as_str()).expect("failed to build regex"))
@@ -42,6 +43,9 @@ pub fn InputField(
                         value.set(newVal);
                     }
                     else {
+                        if let Some(onillegal) = onillegal {
+                            onillegal(());
+                        }
                         value.set(value())
                     }
                 },

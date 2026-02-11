@@ -14,6 +14,6 @@ pub fn Notification() -> Element {
     };
 
     rsx! {
-        div { class, "{notification}" }
+        div { class, z_index: "3", "{notification}" }
     }
 }

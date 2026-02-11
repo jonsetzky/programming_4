@@ -37,6 +37,15 @@ pub fn Login() -> Element {
                         label: "Full Name",
                         placeholder: "Firstname Lastname",
                         legal_regex: r"^[a-öA-Ö][a-öA-Ö\s]*$",
+                        onillegal: |_| {
+                            let mut state = consume_context::<AppState>();
+                            state
+                                .connection_notification
+                                .set(
+                                    "Name must start with a letter and contain only letters or spaces."
+                                        .to_string(),
+                                );
+                        },
                         value: name,
                     }
                     InputField {
@@ -49,10 +58,19 @@ pub fn Login() -> Element {
                         label: "Continue",
                         onclick: move |_| {
                             let name = name().trim().to_string();
+
+                            if name.len() < 3 {
+                                let mut state = consume_context::<AppState>();
+                                state
+                                    .connection_notification
+                                    .set("Name must be longer than 3 characters.".to_string());
+                                return;
+                            }
                             if name.len() >= 3 {
                                 state.packet_builder.set_nickname(&name);
                                 state.username.set(name);
                                 state.address.set(address());
+                                state.connection_notification.set("".to_string());
                                 nav.replace(Route::Home);
                             }
                         },
