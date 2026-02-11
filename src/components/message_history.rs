@@ -31,7 +31,7 @@ fn Message(message: UIChatMessage, is_me: bool) -> Element {
                 background_color: "#262626",
                 border_radius: "6px",
                 padding: "8px 10px 10px 10px",
-                p { user_select: "text", "{content}" }
+                p { user_select: "text", white_space: "pre-line", "{content}" }
             }
             if show_time {
                 p { margin: "2px 0px 0px 0px", color: "#727272", "{time}" }
