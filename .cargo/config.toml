@@ -5,8 +5,9 @@
 rustflags = [
     "-C", "link-arg=-fuse-ld=lld", 
     #"-Z", "threads=8", # this works only on nightly compiler
-    "-A", "non_snake_case",
-    "-Z", "macro-backtrace"]
+    "-A", "non_snake_case"
+    #"-Z", "macro-backtrace" # this works only on nightly compiler
+    ]
 
 # can be further optimized with:
 #rustc-wrapper = "/path/to/sccache"
