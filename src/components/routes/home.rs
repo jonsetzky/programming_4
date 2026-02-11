@@ -19,7 +19,6 @@ use crate::{
         topic_editor::TopicEditor, user_panel::UserPanel,
     },
     packet::{ChatMessage, Packet},
-    route::Route,
     tcp_chat_client::TcpChatClient,
 };
 
@@ -185,7 +184,6 @@ async fn write_loop(client: TcpChatClient, mut outgoing_rx: Receiver<Packet>) {
 
 #[component]
 pub fn Home() -> Element {
-    let nav = navigator();
     let state = use_context::<AppState>();
     let connected = use_signal(|| false);
 
@@ -242,14 +240,7 @@ pub fn Home() -> Element {
                 flex_shrink: "0",
                 // align_items: "center",
                 gap: "4px",
-                h2 {
-                    onclick: move |_| {
-                        nav.replace(Route::Login);
-                    },
-                    padding: "1rem",
-                    padding_top: "1.2rem",
-                    "Your Neighborhoods"
-                }
+                h2 { padding: "1rem", padding_top: "1.2rem", "Your Neighborhoods" }
                 hr { align_self: "center" }
                 for chl in channels() {
                     ChannelButton { active_channel, name: chl }

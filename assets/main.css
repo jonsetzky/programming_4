@@ -185,6 +185,18 @@ button.logout-button:hover {
 button.logout-button:active {
   background-color: #7a0000;
 }
+#final-logout-button {
+  animation: moveLeft 0.5s cubic-bezier(0.3, 0.7, 0.46, 1) forwards;
+}
+
+@keyframes moveLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-185%);
+  }
+}
 
 .notification {
   position: absolute;
