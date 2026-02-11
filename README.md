@@ -15,7 +15,7 @@ which uses WebView2 for rendering.
 - Rust
   - Binaries can be found [here](https://rust-lang.org/learn/get-started/)
 - (optional) `cargo-binstall`. This allows installing built binaries, which makes setup quicker.
-- `dioxus-cli`
+- `dioxus-cli` version `0.7.2`
   - `cargo install dioxus-cli` (or `cargo binstall dioxus-cli`)
   - Installation guide [here](https://dioxuslabs.com/learn/0.7/getting_started/)
     for possible problems
@@ -34,10 +34,9 @@ java -jar target/ChatServer-0.0.1-SNAPSHOT-jar-with-dependencies.jar chatserver.
 
 ## Full dev setup
 
-
 ```bash
 cargo install cargo-binstall
-cargo binstall dioxus-cli
+cargo binstall dioxus-cli --version 0.7.2
 rustup target add wasm32-unknown-unknown
 ```
 
