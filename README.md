@@ -3,9 +3,9 @@
 A windows desktop front end for a chat server. Built with [dioxus](https://dioxuslabs.com/)
 which uses WebView2 for rendering.
 
-<div style="display: flex;width: 100%;justify-content: space-evenly;">
-  <img style="width: 45%;height: 45%;" src="screenshots/home_view_0.1.1.jpg">
-  <img style="width: 45%;height: 45%;" 
+<div style="display: flex;width: 100%;">
+  <img style="width: 49.7%;height: 49.7%;" src="screenshots/home_view_0.1.1.jpg">
+  <img style="width: 49.7%;height: 49.7%;" 
   src="screenshots/home_view_chat_0.1.1.jpg">
 </div>
 
