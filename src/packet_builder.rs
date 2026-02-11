@@ -3,6 +3,7 @@ use std::{
     time::SystemTime,
 };
 
+use chrono::Utc;
 use uuid::Uuid;
 
 use crate::packet::{ChatMessage, Packet};
@@ -39,14 +40,7 @@ impl PacketBuilder {
     }
 
     pub fn chat_message(&self, message: String) -> Packet {
-        let timestamp = i64::try_from(
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .expect("system time before unix epoch")
-                .as_millis(),
-        )
-        .expect("timestamp wouldn't fit into i64");
-
+        let timestamp = Utc::now().timestamp_millis();
         Packet::Chat(ChatMessage {
             id: Uuid::new_v4(),
             inReplyTo: None,
